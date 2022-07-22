@@ -46,7 +46,7 @@ contract Rps {
         wager.p1SaltedChoice = encChoice;
 
         players[msg.sender].wagers.push(wager);
-        emit CreatedWager(msg.sender, msg.value);
+        emit CreatedWager(msg.sender, msg.value, block.timestamp);
     }
 
     function joinWager(address p1, uint8 wagerIndex, Choices p2Choice) public payable {
@@ -63,7 +63,7 @@ contract Rps {
         wager.p2 = msg.sender;
         wager.p2Choice = p2Choice;
         wager.timerStart = block.timestamp;
-        emit JoinedWagerOf(msg.sender, p1, wagerIndex, msg.value);
+        emit JoinedWagerOf(msg.sender, p1, wagerIndex, msg.value, block.timestamp);
     }
 
     function resolveWagerP1(uint8 wagerIndex, string calldata movePw) public {
@@ -89,18 +89,18 @@ contract Rps {
         if (p1Choice == p2Choice) {
             payoutWithAppliedTax(p1, initialBet / 2);
             payoutWithAppliedTax(p2, initialBet / 2);
-            emit WagerDraw(p1, p1Choice, p2, p2Choice, initialBet);
+            emit WagerDraw(p1, p1Choice, p2, p2Choice, initialBet, block.timestamp);
             return;
         }
 
         if (winChoices[uint8(p1Choice)] == p2Choice) {
             payoutWithAppliedTax(p1, initialBet);
-            emit WonWagerAgainst(p1, p1Choice, p2, p2Choice, initialBet);
+            emit WonWagerAgainst(p1, p1Choice, p2, p2Choice, initialBet, block.timestamp);
             return;
         }
         
         payoutWithAppliedTax(p2, initialBet);
-        emit WonWagerAgainst(p2, p2Choice, p1, p1Choice, initialBet);
+        emit WonWagerAgainst(p2, p2Choice, p1, p1Choice, initialBet, block.timestamp);
     }
 
     /* private */
@@ -111,7 +111,7 @@ contract Rps {
 
         wagers[wagerIndex] = wagers[wagers.length - 1];
         wagers.pop();
-        emit RemovedWager(p1, wagerIndex);
+        emit RemovedWager(p1, wagerIndex, block.timestamp);
     }
 
     /* public */
@@ -126,7 +126,7 @@ contract Rps {
         if (wager.hasP2) {
             payoutWithAppliedTax(wager.p2, wager.tokenamount);
         }
-        emit RemovedWager(p1, wagerIndex);
+        emit RemovedWager(p1, wagerIndex, block.timestamp);
     }
 
     function payoutWithAppliedTax(address winner, uint256 initalBet) public {
@@ -134,7 +134,7 @@ contract Rps {
         require(address(this).balance > pot, "Not enough tokens in contract");
 
         payable(winner).transfer(pot);
-        emit PaidOut(winner, pot);
+        emit PaidOut(winner, pot, block.timestamp);
     }
 
     function getHashChoice(bytes32 hashChoice, string calldata clearChoice) public pure returns (Choices) {
@@ -208,10 +208,10 @@ contract Rps {
         _;
     }
 
-    event CreatedWager(address indexed, uint256);
-    event RemovedWager(address indexed, uint8);
-    event JoinedWagerOf(address indexed, address indexed, uint8, uint256);
-    event WonWagerAgainst(address indexed, Choices, address indexed, Choices, uint256);
-    event WagerDraw(address indexed, Choices, address indexed, Choices, uint256);
-    event PaidOut(address indexed, uint256);
+    event CreatedWager(address indexed, uint256, uint256);
+    event RemovedWager(address indexed, uint8, uint256);
+    event JoinedWagerOf(address indexed, address indexed, uint8, uint256, uint256);
+    event WonWagerAgainst(address indexed, Choices, address indexed, Choices, uint256, uint256);
+    event WagerDraw(address indexed, Choices, address indexed, Choices, uint256, uint256);
+    event PaidOut(address indexed, uint256, uint256);
 }
