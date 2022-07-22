@@ -46,6 +46,7 @@ contract Rps {
         wager.p1SaltedChoice = encChoice;
 
         players[msg.sender].wagers.push(wager);
+        emit CreatedWager(msg.sender, msg.value);
     }
 
     function joinWager(address p1, uint8 wagerIndex, Choices p2Choice) public payable {
@@ -62,6 +63,7 @@ contract Rps {
         wager.p2 = msg.sender;
         wager.p2Choice = p2Choice;
         wager.timerStart = block.timestamp;
+        emit JoinedWagerOf(msg.sender, p1, wagerIndex, msg.value);
     }
 
     function resolveWagerP1(uint8 wagerIndex, string memory movePw) public {
@@ -83,29 +85,33 @@ contract Rps {
         payoutWithAppliedTax(msg.sender, wager.tokenamount);
     }
 
-    function chooseWinner(Choices _p1, Choices _p2, address p1, address p2, uint256 amount) public {
-        if (_p1 == _p2) {
-            payoutWithAppliedTax(p1, amount / 2);
-            payoutWithAppliedTax(p2, amount / 2);
+    function chooseWinner(Choices p1Choice, Choices p2Choice, address p1, address p2, uint256 initialBet) public {
+        if (p1Choice == p2Choice) {
+            payoutWithAppliedTax(p1, initialBet / 2);
+            payoutWithAppliedTax(p2, initialBet / 2);
+            emit WagerDraw(p1, p1Choice, p2, p2Choice, initialBet);
             return;
         }
 
-        if (winChoices[uint8(_p1)] == _p2) {
-            payoutWithAppliedTax(p1, amount);
+        if (winChoices[uint8(p1Choice)] == p2Choice) {
+            payoutWithAppliedTax(p1, initialBet);
+            emit WonWagerAgainst(p1, p1Choice, p2, p2Choice, initialBet);
             return;
         }
         
-        payoutWithAppliedTax(p2, amount);
+        payoutWithAppliedTax(p2, initialBet);
+        emit WonWagerAgainst(p2, p2Choice, p1, p1Choice, initialBet);
     }
 
     /* private */
-    function removeWager(address p1,  uint256 wagerIndex) public {
+    function removeWager(address p1,  uint8 wagerIndex) public {
         Wager[] storage wagers = players[p1].wagers;
         require(wagers.length != 0, "No wagers to be removed");
         require(wagers.length >= wagerIndex + 1, "Index out of bounds");
 
         wagers[wagerIndex] = wagers[wagers.length - 1];
         wagers.pop();
+        emit RemovedWager(p1, wagerIndex);
     }
 
     /* public */
@@ -120,13 +126,15 @@ contract Rps {
         if (wager.hasP2) {
             payoutWithAppliedTax(wager.p2, wager.tokenamount);
         }
+        emit RemovedWager(p1, wagerIndex);
     }
 
     function payoutWithAppliedTax(address winner, uint256 initalBet) public {
-        uint256 amount = (initalBet * 2) - (((initalBet * 2) / 100) * TAX_PERCENT);
-        require(address(this).balance > amount, "Not enough tokens in contract");
+        uint256 pot = (initalBet * 2) - (((initalBet * 2) / 100) * TAX_PERCENT);
+        require(address(this).balance > pot, "Not enough tokens in contract");
 
-        payable(winner).transfer(amount);
+        payable(winner).transfer(pot);
+        emit PaidOut(winner, pot);
     }
 
     function getHashChoice(bytes32 hashChoice, string memory clearChoice) public pure returns (Choices) {
@@ -136,9 +144,8 @@ contract Rps {
         return getChoiceFromStr(clearChoice);
     }
 
-    /* Clear password = str */
-    function getChoiceFromStr(string memory str) public pure returns (Choices) {
-        bytes1 first = bytes(str)[0];
+    function getChoiceFromStr(string memory clearChoice) public pure returns (Choices) {
+        bytes1 first = bytes(clearChoice)[0];
 
         if (first == 0x30) {
             return Choices.ROCK;
@@ -168,10 +175,6 @@ contract Rps {
         return address(this).balance;
     }
 
-    function listWagers(address player) public view returns (Wager[] memory) {
-        return players[player].wagers;
-    }
-
     function getTimeLeft(address player, uint8 wagerIndex) public view returns (uint) {
         Wager memory wager = getWager(player, wagerIndex);
         require(!didTimerRunOut(wager.timerStart), "Timer already finished");
@@ -182,6 +185,10 @@ contract Rps {
     function getWagerTokenamount(address player, uint8 wagerIndex) public view returns (uint) {
         Wager memory wager = getWager(player, wagerIndex);
         return wager.tokenamount;
+    }
+
+    function listWagers(address player) public view returns (Wager[] memory) {
+        return players[player].wagers;
     }
 
     function ChangeMinBet(uint minBet) public onlyOwner {
@@ -200,4 +207,11 @@ contract Rps {
         require(msg.sender == owner, "You are not the owner");
         _;
     }
+
+    event CreatedWager(address indexed, uint256);
+    event RemovedWager(address indexed, uint8);
+    event JoinedWagerOf(address indexed, address indexed, uint8, uint256);
+    event WonWagerAgainst(address indexed, Choices, address indexed, Choices, uint256);
+    event WagerDraw(address indexed, Choices, address indexed, Choices, uint256);
+    event PaidOut(address indexed, uint256);
 }
