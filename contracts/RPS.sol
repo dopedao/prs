@@ -66,7 +66,7 @@ contract Rps {
         emit JoinedWagerOf(msg.sender, p1, wagerIndex, msg.value);
     }
 
-    function resolveWagerP1(uint8 wagerIndex, string memory movePw) public {
+    function resolveWagerP1(uint8 wagerIndex, string calldata movePw) public {
         Wager memory wager = getWager(msg.sender, wagerIndex);
         require(wager.hasP2, "Wager doesn't have a second player");
 
@@ -137,14 +137,14 @@ contract Rps {
         emit PaidOut(winner, pot);
     }
 
-    function getHashChoice(bytes32 hashChoice, string memory clearChoice) public pure returns (Choices) {
+    function getHashChoice(bytes32 hashChoice, string calldata clearChoice) public pure returns (Choices) {
         bytes32 hashedClearChoice = sha256(abi.encodePacked(clearChoice));
         require(hashChoice == hashedClearChoice, "Password doesnt match encoded one");
 
         return getChoiceFromStr(clearChoice);
     }
 
-    function getChoiceFromStr(string memory clearChoice) public pure returns (Choices) {
+    function getChoiceFromStr(string calldata clearChoice) public pure returns (Choices) {
         bytes1 first = bytes(clearChoice)[0];
 
         if (first == 0x30) {
