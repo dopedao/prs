@@ -16,7 +16,7 @@ library Errors {
 
 contract Rps {
     /* address public constant OWNER = ; */
-    uint256 public MIN_BET = 10000000 gwei; // 0.01 eth
+    uint256 public MIN_ENTRY_FEE = 10000000 gwei; // 0.01 eth
     uint8 public TAX_PERCENT = 5;
     uint32 public REVEAL_TIMEOUT = 48 hours;
     address payable owner; /* 0x... */
@@ -76,8 +76,8 @@ contract Rps {
         return Games[player];
     }
 
-    function changeMinBet(uint minBet) public onlyOwner {
-        MIN_BET = minBet;
+    function changeMinEntryFee(uint256 mintEntryFee) public onlyOwner {
+        MIN_ENTRY_FEE = mintEntryFee;
     }
 
     function changeTaxPercent(uint8 taxPercent) public onlyOwner {
@@ -89,7 +89,7 @@ contract Rps {
     }
 
     function makeGame(bytes32 encChoice) public payable {
-        require(msg.value >= MIN_BET, Errors.AmmountTooLow);
+        require(msg.value >= MIN_ENTRY_FEE, Errors.AmmountTooLow);
         Game memory game;
         game.entryFee = msg.value;
         game.p1SaltedChoice = encChoice;
