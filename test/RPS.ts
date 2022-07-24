@@ -10,12 +10,6 @@ enum Choices {
   SCISSORS
 }
 
-enum Result {
-  P1,
-  P2,
-  DRAW
-}
-
 describe("Rock, Paper, Scissors", function () {
   async function deployRps() {
 
@@ -34,14 +28,14 @@ describe("Rock, Paper, Scissors", function () {
     const clearChoice = Choices.PAPER + "-" + "test";
     const hashedChoice = ethers.utils.soliditySha256(["string"], [clearChoice]);
 
-    const tokenamount = ethers.utils.parseEther("0.1"); /* 0.1 Eth */
+    const entryFee = ethers.utils.parseEther("0.1"); /* 0.1 Eth */
 
-    await rps.connect(p1).makeWager(hashedChoice, { value: tokenamount });
+    await rps.connect(p1).makeGame(hashedChoice, { value: entryFee });
 
-    return { rps, p1, clearChoice, tokenamount };
+    return { rps, p1, clearChoice, entryFee };
   };
 
-  describe("makeWager", function () {
+  describe("makeGame", function () {
     it("Should create a game", async function () {
       const { rps } = await loadFixture(deployRps);
       const [p1] = await ethers.getSigners();
@@ -51,15 +45,15 @@ describe("Rock, Paper, Scissors", function () {
 
       const weiamount = BigNumber.from("100000000000000000"); /* 0.1 Eth */
 
-      await rps.connect(p1).makeWager(hashedChoice, { value: weiamount });
-      const wager = await rps.connect(p1).getWager(p1.address, 0);
+      await rps.connect(p1).makeGame(hashedChoice, { value: weiamount });
+      const game = await rps.connect(p1).getGame(p1.address, 0);
 
-      expect(wager.p1SaltedChoice).to.equal(hashedChoice);
-      expect(wager.tokenamount).to.equal(weiamount);
-      expect(wager.hasP2).to.equal(false);
+      expect(game.p1SaltedChoice).to.equal(hashedChoice);
+      expect(game.entryFee).to.equal(weiamount);
+      //expect(game.p2).to.equal();
     });
 
-    it("Should revert on bet below minimum", async function () {
+    it("Should revert on entryFee below minimum", async function () {
       const { rps } = await loadFixture(deployRps);
       const [p1] = await ethers.getSigners();
 
@@ -68,105 +62,105 @@ describe("Rock, Paper, Scissors", function () {
 
       const weiamount = BigNumber.from("900000000000000"); /* 0.09 Eth */
 
-      await expect(rps.connect(p1).makeWager(hashedChoice, { value: weiamount })).to.be.revertedWith("Bet amount too low");
+      await expect(rps.connect(p1).makeGame(hashedChoice, { value: weiamount })).to.be.revertedWith("atl");
     });
   });
 
-  describe("joinWager", function () {
+  describe("joinGame", function () {
     it("Should let p2 join the game", async function () {
-      const { rps, p1, tokenamount } = await loadFixture(createGame);
+      const { rps, p1, entryFee } = await loadFixture(createGame);
       const [_, p2] = await ethers.getSigners();
       const p2Choice = Choices.PAPER;
-      const wagerIndex = 0;
+      const gameIndex = 0;
 
-      await rps.connect(p2).joinWager(p1.address, wagerIndex, p2Choice, { value: tokenamount });
-      const wager = await rps.connect(p1).getWager(p1.address, wagerIndex);
+      await rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
+      const game = await rps.connect(p1).getGame(p1.address, gameIndex);
 
-      expect(wager.hasP2).to.equal(true);
-      expect(wager.p2).to.equal(p2.address);
-      expect(wager.p2Choice).to.equal(p2Choice);
+      expect(game.p2).to.equal(p2.address);
+      expect(game.p2).to.equal(p2.address);
+      expect(game.p2Choice).to.equal(p2Choice);
     });
 
     it("Should revert on too few tokens sent by p2", async function () {
       const { rps, p1 } = await loadFixture(createGame);
       const [_, p2] = await ethers.getSigners();
       const p2Choice = Choices.PAPER;
-      const wagerIndex = 0;
+      const gameIndex = 0;
 
-      await expect(rps.connect(p2).joinWager(p1.address, wagerIndex, p2Choice, { value: BigNumber.from("100000000") })).to.revertedWith("Tokenamount to low");
+      await expect(rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: BigNumber.from("100000000") })).to.be.revertedWith("atl");
     });
 
     it("Should revert on index out of bounds p2", async function () {
-      const { rps, p1, tokenamount } = await loadFixture(createGame);
+      const { rps, p1, entryFee } = await loadFixture(createGame);
       const [_, p2] = await ethers.getSigners();
       const p2Choice = Choices.PAPER;
-      const wagerIndex = 1;
+      const gameIndex = 1;
 
-      await expect(rps.connect(p2).joinWager(p1.address, wagerIndex, p2Choice, { value: tokenamount })).to.revertedWith("Index out of bounds");
+      await expect(rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee })).to.be.revertedWith("ioob");
     });
 
     it("Should revert on player joining his own game", async function () {
-      const { rps, p1, tokenamount } = await loadFixture(createGame);
+      const { rps, p1, entryFee } = await loadFixture(createGame);
       const p1Choice = Choices.PAPER;
-      const wagerIndex = 0;
+      const gameIndex = 0;
 
-      await expect(rps.connect(p1).joinWager(p1.address, wagerIndex, p1Choice, { value: tokenamount })).to.revertedWith("You can't join your own game");
+      await expect(rps.connect(p1).joinGame(p1.address, gameIndex, p1Choice, { value: entryFee })).to.be.revertedWith("cjg");
     });
 
-    it("Should revert if wager already has a second player", async function () {
-      const { rps, p1, tokenamount } = await loadFixture(createGame);
+    it("Should revert if game already has a second player", async function () {
+      const { rps, p1, entryFee } = await loadFixture(createGame);
       const [_, p2, p3] = await ethers.getSigners();
       const p2Choice = Choices.PAPER;
       const p3Choice = Choices.ROCK;
-      const wagerIndex = 0;
+      const gameIndex = 0;
 
-      await rps.connect(p2).joinWager(p1.address, wagerIndex, p2Choice, { value: tokenamount });
-      await expect(rps.connect(p3).joinWager(p1.address, wagerIndex, p3Choice, { value: tokenamount })).to.revertedWith("Wager already has a second player");
+      await rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
+      await expect(rps.connect(p3).joinGame(p1.address, gameIndex, p3Choice, { value: entryFee })).to.be.revertedWith("cjg");
     });
   });
 
-  describe("resolveWagerP1", function () {
+  describe("resolveGameP1", function () {
     it("Should revert on index out of bounds", async function () {
-      const { rps, p1, clearChoice, tokenamount } = await loadFixture(createGame);
+      const { rps, p1, clearChoice, entryFee } = await loadFixture(createGame);
       const [_, p2] = await ethers.getSigners();
       const p2Choice = Choices.PAPER;
-      const wagerIndex = 0;
+      const gameIndex = 0;
 
-      await rps.connect(p2).joinWager(p1.address, wagerIndex, p2Choice, { value: tokenamount });
+      await rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
 
       const oufOfBoundsIndex = 1;
 
-      await expect(rps.connect(p1).resolveWagerP1(oufOfBoundsIndex, clearChoice)).to.revertedWith("Index out of bounds");
+      await expect(rps.connect(p1).resolveGameP1(oufOfBoundsIndex, clearChoice)).to.be.revertedWith("ioob");
     });
 
-    it("Should revert if wager doesnt have a second player", async function () {
+    it("Should revert if game doesnt have a second player", async function () {
       const { rps, p1, clearChoice } = await loadFixture(createGame);
 
-      await expect(rps.connect(p1).resolveWagerP1(0, clearChoice)).to.revertedWith("Wager doesn't have a second player");
+      await expect(rps.connect(p1).resolveGameP1(0, clearChoice)).to.be.revertedWith("nsp");
     });
 
-    it("Should let p1 resolve the wager", async function () {
-      const { rps, p1, clearChoice, tokenamount } = await loadFixture(createGame);
+    it("Should let p1 resolve the game", async function () {
+      const { rps, p1, clearChoice, entryFee } = await loadFixture(createGame);
       const [_, p2] = await ethers.getSigners();
-      const wagerIndex = 0;
+      const gameIndex = 0;
       const p2Choice = Choices.PAPER;
-      await rps.connect(p2).joinWager(p1.address, wagerIndex, p2Choice, { value: tokenamount });
+      await rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
 
-      await expect(await rps.connect(p1).resolveWagerP1(wagerIndex, clearChoice)).to.not.reverted;
+      await expect(await rps.connect(p1).resolveGameP1(gameIndex, clearChoice)).to.not.reverted;
     });
 
-    it("Shouldn't let p1 resolve the wager if doesn't have one", async function () {
+    it("Shouldn't let p1 resolve the game if doesn't have one", async function () {
       const { rps } = await loadFixture(deployRps);
       const [p1] = await ethers.getSigners();
-      const wagerIndex = 0;
-      const wagerClearChoice = "test";
+      const gameIndex = 0;
+      const gameClearChoice = "test";
 
-      await expect(rps.connect(p1).resolveWagerP1(wagerIndex, wagerClearChoice)).to.revertedWith("Index out of bounds");
+      await expect(rps.connect(p1).resolveGameP1(gameIndex, gameClearChoice)).to.be.revertedWith("ioob");
     })
   });
 
-  describe("resolveWagerP2", function () {
-    it("Shouldn't let p2 resolve the wager if timer is still running", async function () {
+  describe("resolveGameP2", function () {
+    it("Shouldn't let p2 resolve the game if timer is still running", async function () {
       const Rps = await ethers.getContractFactory("Rps");
       const rps = await Rps.deploy();
 
@@ -175,20 +169,20 @@ describe("Rock, Paper, Scissors", function () {
       const clearChoice = Choices.PAPER + "-" + "test";
       const hashedChoice = ethers.utils.soliditySha256(["string"], [clearChoice]);
 
-      const tokenamount = ethers.utils.parseEther("0.1"); /* 0.1 Eth */
+      const entryFee = ethers.utils.parseEther("0.1"); /* 0.1 Eth */
 
-      await rps.connect(p1).makeWager(hashedChoice, { value: tokenamount });
+      await rps.connect(p1).makeGame(hashedChoice, { value: entryFee });
 
       const [_, p2] = await ethers.getSigners();
-      const wagerIndex = 0;
+      const gameIndex = 0;
       const p2Choice = Choices.PAPER;
 
-      await rps.connect(p2).joinWager(p1.address, wagerIndex, p2Choice, { value: tokenamount });
+      await rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
 
-      await expect(rps.connect(p2).resolveWagerP2(p1.address, wagerIndex)).to.revertedWith("Timer didn't run out yet");
+      await expect(rps.connect(p2).resolveGameP2(p1.address, gameIndex)).to.revertedWith("tsr");
     });
 
-    it("Shouldn't let p2 resolve the wager if wager doesn't have a second player", async function () {
+    it("Shouldn't let p2 resolve the game if game doesn't have a second player", async function () {
       const Rps = await ethers.getContractFactory("Rps");
       const rps = await Rps.deploy();
 
@@ -197,14 +191,14 @@ describe("Rock, Paper, Scissors", function () {
       const clearChoice = Choices.PAPER + "-" + "test";
       const hashedChoice = ethers.utils.soliditySha256(["string"], [clearChoice]);
 
-      const tokenamount = ethers.utils.parseEther("0.1"); /* 0.1 Eth */
+      const entryFee = ethers.utils.parseEther("0.1"); /* 0.1 Eth */
 
-      await rps.connect(p1).makeWager(hashedChoice, { value: tokenamount });
+      await rps.connect(p1).makeGame(hashedChoice, { value: entryFee });
 
       const [_, p2] = await ethers.getSigners();
-      const wagerIndex = 0;
+      const gameIndex = 0;
 
-      await expect(rps.connect(p2).resolveWagerP2(p1.address, wagerIndex)).to.revertedWith("Wager doesn't have a second player");
+      await expect(rps.connect(p2).resolveGameP2(p1.address, gameIndex)).to.revertedWith("nsp");
     });
 
     it("Should clean up after resolve", async function () {
@@ -216,19 +210,19 @@ describe("Rock, Paper, Scissors", function () {
       const clearChoice = Choices.PAPER + "-" + "test";
       const hashedChoice = ethers.utils.soliditySha256(["string"], [clearChoice]);
 
-      const tokenamount = ethers.utils.parseEther("0.1"); /* 0.1 Eth */
+      const entryFee = ethers.utils.parseEther("0.1"); /* 0.1 Eth */
 
-      await rps.connect(p1).makeWager(hashedChoice, { value: tokenamount });
+      await rps.connect(p1).makeGame(hashedChoice, { value: entryFee });
       const [_, p2] = await ethers.getSigners();
-      const wagerIndex = 0;
+      const gameIndex = 0;
       const p2Choice = Choices.PAPER;
-      await rps.connect(p2).joinWager(p1.address, wagerIndex, p2Choice, { value: tokenamount });
-      await rps.connect(p1).resolveWagerP1(wagerIndex, clearChoice);
+      await rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
+      await rps.connect(p1).resolveGameP1(gameIndex, clearChoice);
 
-      await expect(rps.connect(p1).getWager(p1.address, wagerIndex)).to.be.revertedWith("Index out of bounds");
+      await expect(rps.connect(p1).getGame(p1.address, gameIndex)).to.be.revertedWith("ioob");
     });
 
-    it("Should let p2 resolve the wager if the timer ran out", async function () {
+    it("Should let p2 resolve the game if the timer ran out", async function () {
       const Rps = await ethers.getContractFactory("Rps");
       const rps = await Rps.deploy();
 
@@ -237,24 +231,24 @@ describe("Rock, Paper, Scissors", function () {
       const clearChoice = Choices.PAPER + "-" + "test";
       const hashedChoice = ethers.utils.soliditySha256(["string"], [clearChoice]);
 
-      const tokenamount = ethers.utils.parseEther("0.1"); /* 0.1 Eth */
+      const entryFee = ethers.utils.parseEther("0.1"); /* 0.1 Eth */
       const revealTimeout = await (await rps.REVEAL_TIMEOUT());
 
-      await rps.connect(p1).makeWager(hashedChoice, { value: tokenamount });
+      await rps.connect(p1).makeGame(hashedChoice, { value: entryFee });
       const [_, p2] = await ethers.getSigners();
-      const wagerIndex = 0;
+      const gameIndex = 0;
 
       const p2Choice = Choices.PAPER;
-      await rps.connect(p2).joinWager(p1.address, wagerIndex, p2Choice, { value: tokenamount });
+      await rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
 
       await network.provider.send("evm_increaseTime", [revealTimeout]);
       await network.provider.send("evm_mine");
 
       const p2Bal = await p2.getBalance();
-      await rps.connect(p2).resolveWagerP2(p1.address ,wagerIndex);
+      await rps.connect(p2).resolveGameP2(p1.address ,gameIndex);
 
       await expect((await p2.getBalance()).sub(p2Bal)).to.be.approximately(parseEther("0.19"), parseEther("0.01"));
-      await expect(rps.connect(p1).getWager(p1.address, wagerIndex)).to.be.revertedWith("Index out of bounds");
+      await expect(rps.connect(p1).getGame(p1.address, gameIndex)).to.be.revertedWith("ioob");
     });
   });
 
@@ -300,13 +294,13 @@ describe("Rock, Paper, Scissors", function () {
 
       const p1Choice = Choices.PAPER;
       const p2Choice = Choices.ROCK;
-      const bet = parseEther("0.1");
-      await rps.connect(p1).rcv({ value: bet.mul(2) });
+      const entryFee = parseEther("0.1");
+      await rps.connect(p1).rcv({ value: entryFee.mul(2) });
 
       const p1Bal = await p1.getBalance();
-      await rps.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, bet);
+      await rps.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, entryFee);
 
-      await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(bet.mul(2), parseEther("0.05"));
+      await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(entryFee.mul(2), parseEther("0.05"));
     });
 
     it("Should return p1 when rock and scissors", async function () {
@@ -315,13 +309,13 @@ describe("Rock, Paper, Scissors", function () {
 
       const p1Choice = Choices.ROCK;
       const p2Choice = Choices.SCISSORS;
-      const bet = parseEther("0.1");
-      await rps.connect(p1).rcv({ value: bet.mul(2) });
+      const entryFee = parseEther("0.1");
+      await rps.connect(p1).rcv({ value: entryFee.mul(2) });
 
       const p1Bal = await p1.getBalance();
-      await rps.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, bet);
+      await rps.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, entryFee);
 
-      await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(bet.mul(2), parseEther("0.05"));
+      await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(entryFee.mul(2), parseEther("0.05"));
     });
 
     it("Should return p1 when scissors and paper", async function () {
@@ -330,13 +324,13 @@ describe("Rock, Paper, Scissors", function () {
 
       const p1Choice = Choices.SCISSORS;
       const p2Choice = Choices.PAPER;
-      const bet = parseEther("0.1");
-      await rps.connect(p1).rcv({ value: bet.mul(2) });
+      const entryFee = parseEther("0.1");
+      await rps.connect(p1).rcv({ value: entryFee.mul(2) });
 
       const p1Bal = await p1.getBalance();
-      await rps.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, bet);
+      await rps.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, entryFee);
 
-      await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(bet.mul(2), parseEther("0.05"));
+      await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(entryFee.mul(2), parseEther("0.05"));
     });
 
     it("Should return draw when p1==p2", async function () {
@@ -345,15 +339,15 @@ describe("Rock, Paper, Scissors", function () {
 
       const p1Choice = Choices.PAPER;
       const p2Choice = Choices.PAPER;
-      const bet = parseEther("0.1");
-      await rps.connect(p1).rcv({ value: bet.mul(2) });
+      const entryFee = parseEther("0.1");
+      await rps.connect(p1).rcv({ value: entryFee.mul(2) });
 
       const p1Bal = await p1.getBalance();
       const p2Bal = await p2.getBalance();
-      await rps.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, bet);
+      await rps.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, entryFee);
 
-      await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(bet, parseEther("0.008"));
-      await expect(await (await p2.getBalance()).sub(p2Bal)).to.approximately(bet, parseEther("0.008"));
+      await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(entryFee, parseEther("0.008"));
+      await expect(await (await p2.getBalance()).sub(p2Bal)).to.approximately(entryFee, parseEther("0.008"));
     });
   });
 
@@ -361,30 +355,30 @@ describe("Rock, Paper, Scissors", function () {
     it("Should revert if contract doesn't have enough tokens", async function () {
       const { rps } = await loadFixture(deployRps);
       const [p1] = await ethers.getSigners();
-      const tokenamount = utils.parseEther("1");
+      const entryFee = utils.parseEther("1");
 
-      await expect(rps.payoutWithAppliedTax(p1.address, tokenamount)).to.revertedWith("Not enough tokens in contract");
+      await expect(rps.payoutWithAppliedTax(p1.address, entryFee)).to.revertedWith("nemic");
     })
 
     it("Should applay tax", async function () {
       const { rps } = await loadFixture(deployRps);
       const [p1] = await ethers.getSigners();
 
-      const initialBet = ethers.utils.parseEther("0.5");
+      const initialEntryFee = ethers.utils.parseEther("0.5");
       const TAX = await (await rps.TAX_PERCENT());
 
-      const payout = (initialBet.mul(2)).sub(((initialBet.mul(2)).div(100)).mul(TAX));
-      const expectedBal = (initialBet.mul(2)).sub(payout);
+      const payout = (initialEntryFee.mul(2)).sub(((initialEntryFee.mul(2)).div(100)).mul(TAX));
+      const expectedBal = (initialEntryFee.mul(2)).sub(payout);
 
-      await rps.connect(p1).rcv({ value: initialBet.mul(2) });
-      await rps.payoutWithAppliedTax(p1.address, initialBet);
+      await rps.connect(p1).rcv({ value: initialEntryFee.mul(2) });
+      await rps.payoutWithAppliedTax(p1.address, initialEntryFee);
 
       await expect(await rps.getBalance()).to.equal(expectedBal);
     })
   })
 
-  describe("removeWager", function() {
-    it("Should remove a wager and update its position", async function() {
+  describe("removeGame", function() {
+    it("Should remove a game and update its position", async function() {
       const { rps } = await loadFixture(deployRps);
       const [p1] = await ethers.getSigners();
 
@@ -395,15 +389,15 @@ describe("Rock, Paper, Scissors", function () {
       const weiamount = parseEther("0.1"); /* 0.1 Eth */
       const weiamount2 = parseEther("0.2"); /* 0.1 Eth */
 
-      await rps.connect(p1).makeWager(hashedChoice, { value: weiamount });
-      await rps.connect(p1).makeWager(hashedChoice, { value: weiamount2 });
+      await rps.connect(p1).makeGame(hashedChoice, { value: weiamount });
+      await rps.connect(p1).makeGame(hashedChoice, { value: weiamount2 });
 
-      await rps.connect(p1).removeWagerP1(p1.address, w1);
+      await rps.connect(p1).removeGameP1(p1.address, w1);
       
-      expect(await (await rps.connect(p1).getWager(p1.address, w1)).tokenamount).to.equal(weiamount2);
+      expect(await (await rps.connect(p1).getGame(p1.address, w1)).entryFee).to.equal(weiamount2);
     });
 
-    it("Should forfeit if wager has p2", async function() {
+    it("Should forfeit if game has p2", async function() {
       const { rps } = await loadFixture(deployRps);
       const [p1, p2] = await ethers.getSigners();
 
@@ -413,16 +407,16 @@ describe("Rock, Paper, Scissors", function () {
 
       const weiamount = parseEther("0.1"); /* 0.1 Eth */
 
-      await rps.connect(p1).makeWager(hashedChoice, { value: weiamount });
-      await rps.connect(p2).joinWager(p1.address, w1, Choices.PAPER, { value: weiamount});
+      await rps.connect(p1).makeGame(hashedChoice, { value: weiamount });
+      await rps.connect(p2).joinGame(p1.address, w1, Choices.PAPER, { value: weiamount});
       const p2Bal = await p2.getBalance();
 
-      await rps.connect(p1).removeWagerP1(p1.address, w1);
+      await rps.connect(p1).removeGameP1(p1.address, w1);
       
       await expect((await p2.getBalance()).sub(p2Bal)).to.be.approximately(parseEther("0.19"), parseEther("0.01"));
     })
 
-    it("Should revert if caller isn't the wager owner", async function() {
+    it("Should revert if caller isn't the game owner", async function() {
       const { rps } = await loadFixture(deployRps);
       const [p1, p2] = await ethers.getSigners();
 
@@ -432,10 +426,10 @@ describe("Rock, Paper, Scissors", function () {
 
       const weiamount = parseEther("0.1"); /* 0.1 Eth */
 
-      await rps.connect(p1).makeWager(hashedChoice, { value: weiamount });
-      await rps.connect(p2).joinWager(p1.address, w1, Choices.PAPER, { value: weiamount});
+      await rps.connect(p1).makeGame(hashedChoice, { value: weiamount });
+      await rps.connect(p2).joinGame(p1.address, w1, Choices.PAPER, { value: weiamount});
 
-      await expect(rps.connect(p2).removeWagerP1(p1.address, w1)).to.be.revertedWith("You can only remove your own wagers");
+      await expect(rps.connect(p2).removeGameP1(p1.address, w1)).to.be.revertedWith("crg");
     })
   })
 
@@ -445,27 +439,27 @@ describe("Rock, Paper, Scissors", function () {
       const rps = await Rps.deploy();
 
       const [p1, p2] = await ethers.getSigners();
-      const wagerIndex = 0;
+      const gameIndex = 0;
       const p2Choice = Choices.PAPER;
 
       const clearChoice = Choices.PAPER + "-" + "test";
       const hashedChoice = ethers.utils.soliditySha256(["string"], [clearChoice]);
 
-      const tokenamount = ethers.utils.parseEther("0.1");
+      const entryFee = ethers.utils.parseEther("0.1");
 
       for (let i=0; i<100; i++) {
-        await rps.connect(p1).makeWager(hashedChoice, { value: tokenamount });
+        await rps.connect(p1).makeGame(hashedChoice, { value: entryFee });
       }
 
       for (let i=0; i<100; i++) {
-        await rps.connect(p2).joinWager(p1.address, i, p2Choice, { value: tokenamount });
+        await rps.connect(p2).joinGame(p1.address, i, p2Choice, { value: entryFee });
       }
 
       const p1Bal = await p1.getBalance();
       const p2Bal = await  p2.getBalance();
 
       for (let i=0; i<100; i++) {
-        expect(await rps.connect(p1).resolveWagerP1(wagerIndex, clearChoice)).to.not.reverted;
+        expect(await rps.connect(p1).resolveGameP1(gameIndex, clearChoice)).to.not.reverted;
       }
 
       expect(await (await rps.getBalance())).to.be.equal(parseEther("1"));

@@ -1,145 +1,215 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.15;
+
+library Errors {
+    string constant IndexOutOfBounds = "ioob";
+    string constant CannotRemoveGame = "crg";
+    string constant AmmountTooLow = "atl";
+    string constant CannotJoinGame = "cjg";
+    string constant NoSecondPlayer = "nsp";
+    string constant TimerStillRunning = "tsr";
+    string constant NotEnoughMoneyInContract = "nemic";
+    string constant InvalidPassword = "ip";
+    string constant TimerFinished = "tf";
+    string constant NoActiveTimer = "nat";
+}
 
 contract Rps {
     /* address public constant OWNER = ; */
-    uint public MIN_BET = 10000000 gwei; // 0.01 eth
+    uint256 public MIN_BET = 10000000 gwei; // 0.01 eth
     uint8 public TAX_PERCENT = 5;
     uint32 public REVEAL_TIMEOUT = 48 hours;
     address payable owner; /* 0x... */
 
-    enum Choices {
-        ROCK,
-        PAPER,
-        SCISSORS
-    }
-    Choices[3] winChoices = [Choices.SCISSORS, Choices.ROCK, Choices.PAPER];
+    enum Choices { ROCK, PAPER, SCISSORS, FORFEIT }
 
-    enum Winner {
-        P1,
-        P2,
-        DRAW
-    }
-
-    struct Wager {
-        uint256 tokenamount;
+    struct Game {
+        uint256 entryFee;
         bytes32 p1SaltedChoice;
 
-        bool hasP2;
         address p2;
         Choices p2Choice;
 
-        uint timerStart;
+        uint256 timerStart;
     }
 
-    struct Player {
-        Wager[] wagers;
+    mapping(address => Game[]) Games;
+
+    event CreatedGame(address indexed, uint256, uint256);
+    event RemovedGame(address indexed, uint8, uint256);
+    event JoinedGameOf(address indexed, address indexed, uint256, uint256, uint256);
+    event WonGameAgainst(address indexed, Choices, address indexed, Choices, uint256, uint256);
+    event GameDraw(address indexed, Choices, address indexed, Choices, uint256, uint256);
+    event PaidOut(address indexed, uint256, uint256);
+
+    modifier onlyOwner {
+        require(msg.sender == owner, "You are not the owner");
+        _;
     }
 
-    mapping(address => Player) players;
+    function rcv() public payable {}
 
-    function makeWager(bytes32 encChoice) public payable {
-        require(msg.value >= MIN_BET, "Bet amount too low");
-        Wager memory wager;
-        wager.hasP2 = false;
-        wager.tokenamount = msg.value;
-        wager.p1SaltedChoice = encChoice;
+    function getGame(address player, uint8 gameId) public view returns (Game memory) {
+        Game[] storage games = Games[player];
+        require(games.length > gameId, Errors.IndexOutOfBounds);
 
-        players[msg.sender].wagers.push(wager);
-        emit CreatedWager(msg.sender, msg.value, block.timestamp);
+        return games[gameId];
     }
 
-    function joinWager(address p1, uint8 wagerIndex, Choices p2Choice) public payable {
-        require(p1 != msg.sender, "You can't join your own game");
-
-        Wager[] storage wagers = players[p1].wagers;
-        require(wagers.length >= wagerIndex + 1, "Index out of bounds");
-
-        Wager storage wager = wagers[wagerIndex];
-        require(!wager.hasP2, "Wager already has a second player");
-        require(msg.value >= wager.tokenamount, "Tokenamount to low");
-
-        wager.hasP2 = true;
-        wager.p2 = msg.sender;
-        wager.p2Choice = p2Choice;
-        wager.timerStart = block.timestamp;
-        emit JoinedWagerOf(msg.sender, p1, wagerIndex, msg.value, block.timestamp);
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
     }
 
-    function resolveWagerP1(uint8 wagerIndex, string calldata movePw) public {
-        Wager memory wager = getWager(msg.sender, wagerIndex);
-        require(wager.hasP2, "Wager doesn't have a second player");
-
-        Choices p1Choice = getHashChoice(wager.p1SaltedChoice, movePw);
-
-        removeWager(msg.sender, wagerIndex);
-        chooseWinner(p1Choice,wager.p2Choice, msg.sender, wager.p2, wager.tokenamount);
+    function getTimeLeft(address player, uint8 gameId) public view returns (uint) {
+        Game memory game = getGame(player, gameId);
+        require(!didTimerRunOut(game.timerStart), Errors.TimerFinished);
+        require(game.p2 != address(0), Errors.NoActiveTimer);
+        return REVEAL_TIMEOUT - (block.timestamp - game.timerStart);
     }
 
-    function resolveWagerP2(address p1, uint8 wagerIndex) public {
-        Wager memory wager = getWager(p1, wagerIndex);
-        require(wager.hasP2, "Wager doesn't have a second player");
-        require(didTimerRunOut(wager.timerStart), "Timer didn't run out yet");
-
-        removeWager(p1, wagerIndex);
-        payoutWithAppliedTax(msg.sender, wager.tokenamount);
+    function getGameEntryFee(address player, uint8 gameId) public view returns (uint) {
+        Game memory game = getGame(player, gameId);
+        return game.entryFee;
     }
 
-    function chooseWinner(Choices p1Choice, Choices p2Choice, address p1, address p2, uint256 initialBet) public {
+    function listgames(address player) public view returns (Game[] memory) {
+        return Games[player];
+    }
+
+    function changeMinBet(uint minBet) public onlyOwner {
+        MIN_BET = minBet;
+    }
+
+    function changeTaxPercent(uint8 taxPercent) public onlyOwner {
+        TAX_PERCENT = taxPercent;
+    }
+
+    function changeRevealTimeout(uint32 revealTimeout) public onlyOwner {
+        REVEAL_TIMEOUT = revealTimeout;
+    }
+
+    function makeGame(bytes32 encChoice) public payable {
+        require(msg.value >= MIN_BET, Errors.AmmountTooLow);
+        Game memory game;
+        game.entryFee = msg.value;
+        game.p1SaltedChoice = encChoice;
+
+        Games[msg.sender].push(game);
+        emit CreatedGame(msg.sender, msg.value, block.timestamp);
+    }
+
+    function joinGame(
+        address p1,
+        uint8 gameId,
+        Choices p2Choice
+        ) public payable {
+        require(p1 != msg.sender, Errors.CannotJoinGame);
+
+        Game[] storage games = Games[p1];
+        require(games.length > gameId, Errors.IndexOutOfBounds);
+
+        Game storage game = games[gameId];
+        require(game.p2 == address(0), Errors.CannotJoinGame);
+        require(msg.value >= game.entryFee, Errors.AmmountTooLow);
+
+        game.p2 = msg.sender;
+        game.p2Choice = p2Choice;
+        game.timerStart = block.timestamp;
+        emit JoinedGameOf(msg.sender, p1, gameId, msg.value, block.timestamp);
+    }
+
+    function resolveGameP1(uint8 gameId, string calldata movePw) public {
+        Game memory game = getGame(msg.sender, gameId);
+        require(game.p2 != address(0), Errors.NoSecondPlayer);
+
+        Choices p1Choice = getHashChoice(game.p1SaltedChoice, movePw);
+
+        removeGame(msg.sender, gameId);
+        chooseWinner(p1Choice, game.p2Choice, msg.sender, game.p2, game.entryFee);
+    }
+
+    function resolveGameP2(address p1, uint8 gameId) public {
+        Game memory game = getGame(p1, gameId);
+        require(game.p2 != address(0), Errors.NoSecondPlayer);
+        require(didTimerRunOut(game.timerStart), Errors.TimerStillRunning);
+
+        removeGame(p1, gameId);
+        payoutWithAppliedTax(msg.sender, game.entryFee);
+    }
+
+    function removeGameP1(address p1, uint8 gameId) public {
+        require(msg.sender == p1, Errors.CannotRemoveGame);
+        Game[] storage games = Games[msg.sender];
+        Game memory game = getGame(p1, gameId);
+
+        games[gameId] = games[games.length - 1];
+        games.pop();
+
+        if (game.p2 != address(0)) {
+            payoutWithAppliedTax(game.p2, game.entryFee);
+        }
+        emit RemovedGame(p1, gameId, block.timestamp);
+    }
+
+    function chooseWinner(
+        Choices p1Choice,
+        Choices p2Choice,
+        address p1,
+        address p2,
+        uint256 initialBet
+        ) public {
         if (p1Choice == p2Choice) {
             payoutWithAppliedTax(p1, initialBet / 2);
             payoutWithAppliedTax(p2, initialBet / 2);
-            emit WagerDraw(p1, p1Choice, p2, p2Choice, initialBet, block.timestamp);
+            emit GameDraw(p1, p1Choice, p2, p2Choice, initialBet, block.timestamp);
             return;
         }
 
-        if (winChoices[uint8(p1Choice)] == p2Choice) {
+        if (p1Choice == Choices.PAPER && p2Choice == Choices.ROCK
+        || p1Choice == Choices.ROCK && p2Choice == Choices.SCISSORS
+        || p1Choice == Choices.SCISSORS && p2Choice == Choices.PAPER) {
             payoutWithAppliedTax(p1, initialBet);
-            emit WonWagerAgainst(p1, p1Choice, p2, p2Choice, initialBet, block.timestamp);
+            emit WonGameAgainst(p1, p1Choice, p2, p2Choice, initialBet, block.timestamp);
             return;
+        }
+
+        if (p1Choice == Choices.FORFEIT) {
+            payoutWithAppliedTax(p2, initialBet);
+        }
+
+        if (p2Choice == Choices.FORFEIT) {
+            payoutWithAppliedTax(p1, initialBet);
         }
         
         payoutWithAppliedTax(p2, initialBet);
-        emit WonWagerAgainst(p2, p2Choice, p1, p1Choice, initialBet, block.timestamp);
+        emit WonGameAgainst(p2, p2Choice, p1, p1Choice, initialBet, block.timestamp);
     }
 
-    /* private */
-    function removeWager(address p1,  uint8 wagerIndex) public {
-        Wager[] storage wagers = players[p1].wagers;
-        require(wagers.length != 0, "No wagers to be removed");
-        require(wagers.length >= wagerIndex + 1, "Index out of bounds");
+    function removeGame(address p1,  uint8 gameId) public {
+        Game[] storage games = Games[p1];
+        require(games.length != 0, Errors.CannotRemoveGame);
+        require(games.length > gameId, Errors.IndexOutOfBounds);
 
-        wagers[wagerIndex] = wagers[wagers.length - 1];
-        wagers.pop();
-        emit RemovedWager(p1, wagerIndex, block.timestamp);
-    }
-
-    /* public */
-    function removeWagerP1(address p1, uint8 wagerIndex) public {
-        require(msg.sender == p1, "You can only remove your own wagers");
-        Wager[] storage wagers = players[msg.sender].wagers;
-        Wager memory wager = getWager(p1, wagerIndex);
-
-        wagers[wagerIndex] = wagers[wagers.length - 1];
-        wagers.pop();
-
-        if (wager.hasP2) {
-            payoutWithAppliedTax(wager.p2, wager.tokenamount);
-        }
-        emit RemovedWager(p1, wagerIndex, block.timestamp);
+        games[gameId] = games[games.length - 1];
+        games.pop();
+        emit RemovedGame(p1, gameId, block.timestamp);
     }
 
     function payoutWithAppliedTax(address winner, uint256 initalBet) public {
         uint256 pot = (initalBet * 2) - (((initalBet * 2) / 100) * TAX_PERCENT);
-        require(address(this).balance > pot, "Not enough tokens in contract");
+        require(address(this).balance > pot, Errors.NotEnoughMoneyInContract);
 
         payable(winner).transfer(pot);
         emit PaidOut(winner, pot, block.timestamp);
     }
 
+    function didTimerRunOut(uint256 timerStart) private view returns (bool){
+        return block.timestamp > timerStart + REVEAL_TIMEOUT;
+    }
+
     function getHashChoice(bytes32 hashChoice, string calldata clearChoice) public pure returns (Choices) {
         bytes32 hashedClearChoice = sha256(abi.encodePacked(clearChoice));
-        require(hashChoice == hashedClearChoice, "Password doesnt match encoded one");
+        require(hashChoice == hashedClearChoice, Errors.InvalidPassword);
 
         return getChoiceFromStr(clearChoice);
     }
@@ -155,63 +225,6 @@ contract Rps {
             return Choices.SCISSORS;
         }
 
-        revert("Invalid choice");
+        return Choices.FORFEIT;
     }
-
-    function rcv() public payable {}
-
-    function didTimerRunOut(uint256 timerStart) private view returns (bool){
-        return block.timestamp > timerStart + REVEAL_TIMEOUT;
-    }
-
-    function getWager(address player, uint8 wagerIndex) public view returns (Wager memory) {
-        Wager[] storage wagers = players[player].wagers;
-        require(wagers.length >= wagerIndex + 1, "Index out of bounds");
-
-        return wagers[wagerIndex];
-    }
-
-    function getBalance() public view returns (uint256) {
-        return address(this).balance;
-    }
-
-    function getTimeLeft(address player, uint8 wagerIndex) public view returns (uint) {
-        Wager memory wager = getWager(player, wagerIndex);
-        require(!didTimerRunOut(wager.timerStart), "Timer already finished");
-        require(wager.hasP2, "Timer didn't start yet");
-        return REVEAL_TIMEOUT - (block.timestamp - wager.timerStart);
-    }
-
-    function getWagerTokenamount(address player, uint8 wagerIndex) public view returns (uint) {
-        Wager memory wager = getWager(player, wagerIndex);
-        return wager.tokenamount;
-    }
-
-    function listWagers(address player) public view returns (Wager[] memory) {
-        return players[player].wagers;
-    }
-
-    function ChangeMinBet(uint minBet) public onlyOwner {
-        MIN_BET = minBet;
-    }
-
-    function ChangeTaxPercent(uint8 taxPercent) public onlyOwner {
-        TAX_PERCENT = taxPercent;
-    }
-
-    function ChangeRevealTimeout(uint32 revealTimeout) public onlyOwner {
-        REVEAL_TIMEOUT = revealTimeout;
-    }
-
-    modifier onlyOwner {
-        require(msg.sender == owner, "You are not the owner");
-        _;
-    }
-
-    event CreatedWager(address indexed, uint256, uint256);
-    event RemovedWager(address indexed, uint8, uint256);
-    event JoinedWagerOf(address indexed, address indexed, uint8, uint256, uint256);
-    event WonWagerAgainst(address indexed, Choices, address indexed, Choices, uint256, uint256);
-    event WagerDraw(address indexed, Choices, address indexed, Choices, uint256, uint256);
-    event PaidOut(address indexed, uint256, uint256);
 }
