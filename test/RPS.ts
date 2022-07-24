@@ -303,7 +303,7 @@ describe("Rock, Paper, Scissors", function () {
       await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(entryFee.mul(2), parseEther("0.05"));
     });
 
-    it("Should return p1 when rock and scissors", async function () {
+    it("Should pay p1 when rock and scissors", async function () {
       const { rps } = await loadFixture(deployRps);
       const [p1, p2] = await ethers.getSigners();
 
@@ -318,7 +318,7 @@ describe("Rock, Paper, Scissors", function () {
       await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(entryFee.mul(2), parseEther("0.05"));
     });
 
-    it("Should return p1 when scissors and paper", async function () {
+    it("Should pay p1 when scissors and paper", async function () {
       const { rps } = await loadFixture(deployRps);
       const [p1, p2] = await ethers.getSigners();
 
@@ -333,7 +333,7 @@ describe("Rock, Paper, Scissors", function () {
       await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(entryFee.mul(2), parseEther("0.05"));
     });
 
-    it("Should return draw when p1==p2", async function () {
+    it("Should pay both players when p1==p2", async function () {
       const { rps } = await loadFixture(deployRps);
       const [p1, p2] = await ethers.getSigners();
 

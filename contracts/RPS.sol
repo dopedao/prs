@@ -156,33 +156,37 @@ contract Rps {
         Choices p2Choice,
         address p1,
         address p2,
-        uint256 initialBet
+        uint256 entryFee
         ) public {
         if (p1Choice == p2Choice) {
-            payoutWithAppliedTax(p1, initialBet / 2);
-            payoutWithAppliedTax(p2, initialBet / 2);
-            emit GameDraw(p1, p1Choice, p2, p2Choice, initialBet, block.timestamp);
+            payoutWithAppliedTax(p1, entryFee / 2);
+            payoutWithAppliedTax(p2, entryFee / 2);
+            emit GameDraw(p1, p1Choice, p2, p2Choice, entryFee, block.timestamp);
             return;
         }
 
         if (p1Choice == Choices.PAPER && p2Choice == Choices.ROCK
         || p1Choice == Choices.ROCK && p2Choice == Choices.SCISSORS
         || p1Choice == Choices.SCISSORS && p2Choice == Choices.PAPER) {
-            payoutWithAppliedTax(p1, initialBet);
-            emit WonGameAgainst(p1, p1Choice, p2, p2Choice, initialBet, block.timestamp);
+            payoutWithAppliedTax(p1, entryFee);
+            emit WonGameAgainst(p1, p1Choice, p2, p2Choice, entryFee, block.timestamp);
             return;
         }
 
         if (p1Choice == Choices.FORFEIT) {
-            payoutWithAppliedTax(p2, initialBet);
+            payoutWithAppliedTax(p2, entryFee);
+            emit WonGameAgainst(p2, p2Choice, p1, p1Choice, entryFee, block.timestamp);
+            return;
         }
 
         if (p2Choice == Choices.FORFEIT) {
-            payoutWithAppliedTax(p1, initialBet);
+            payoutWithAppliedTax(p1, entryFee);
+            emit WonGameAgainst(p1, p1Choice, p2, p2Choice, entryFee, block.timestamp);
+            return;
         }
         
-        payoutWithAppliedTax(p2, initialBet);
-        emit WonGameAgainst(p2, p2Choice, p1, p1Choice, initialBet, block.timestamp);
+        payoutWithAppliedTax(p2, entryFee);
+        emit WonGameAgainst(p2, p2Choice, p1, p1Choice, entryFee, block.timestamp);
     }
 
     function removeGame(address p1,  uint8 gameId) public {
