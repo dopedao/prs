@@ -1,4 +1,14 @@
 {
+  "name": "@dopewars/prs",
+  "description": "PAPER ROCK SCISSORS",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "test": "hardhat test --parallel",
+    "test:gas": "hardhat test",
+    "dev": "hardhat node",
+    "deploy": "hardhat run scripts/deploy.ts"
+  },
   "devDependencies": {
     "@ethersproject/abi": "^5.4.7",
     "@ethersproject/providers": "^5.4.7",

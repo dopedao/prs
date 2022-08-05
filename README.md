@@ -1,8 +1,10 @@
-# Rock Paper Scissors, but on the blockchain!
+# PAPER ROCK SCISSORS
+
+## Commands
 
 ```shell
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.ts
+yarn test
+yarn test:gas
+yarn dev
+yarn deploy
 ```
