@@ -16,6 +16,9 @@ yarn test:watch
 # Run hardhat node
 yarn dev
 
-# Do it live!
+# Build ABI files for react front-end binding
+yarn build
+
+# Deploy it to the chain
 yarn deploy
 ```

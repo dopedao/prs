@@ -11,7 +11,7 @@
     "deploy": "hardhat run scripts/deploy.ts",
     "build": "yarn abi && yarn typechain && tsc && copyfiles -u 1 \"types/**/*.d.ts\" dist",
     "abi": "hardhat export-abi",
-    "typechain": "typechain --target ethers-v5 --out-dir types 'abi/*.json'"
+    "typechain": "hardhat typechain"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.4.7",
@@ -27,6 +27,7 @@
     "@types/mocha": "^9.1.0",
     "@types/node": ">=12.0.0",
     "chai": "^4.2.0",
+    "copyfiles": "^2.4.1",
     "ethers": "^5.4.7",
     "hardhat": "^2.10.0",
     "hardhat-abi-exporter": "^2.10.0",
