@@ -1,6 +1,7 @@
 {
   "name": "@dopewars/prs",
   "description": "PAPER ROCK SCISSORS",
+  "author": "DOPE DAO",
   "version": "0.0.1",
   "private": true,
   "scripts": {
