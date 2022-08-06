@@ -4,7 +4,7 @@ pragma solidity ^0.8.15;
 library Errors {
     string constant IndexOutOfBounds = "ioob";
     string constant CannotRemoveGame = "crg";
-    string constant AmmountTooLow = "atl";
+    string constant AmountTooLow = "atl";
     string constant CannotJoinGame = "cjg";
     string constant NoSecondPlayer = "nsp";
     string constant TimerStillRunning = "tsr";
@@ -89,7 +89,7 @@ contract Rps {
     }
 
     function makeGame(bytes32 encChoice) public payable {
-        require(msg.value >= MIN_ENTRY_FEE, Errors.AmmountTooLow);
+        require(msg.value >= MIN_ENTRY_FEE, Errors.AmountTooLow);
         Game memory game;
         game.entryFee = msg.value;
         game.p1SaltedChoice = encChoice;
@@ -110,7 +110,7 @@ contract Rps {
 
         Game storage game = games[gameId];
         require(game.p2 == address(0), Errors.CannotJoinGame);
-        require(msg.value >= game.entryFee, Errors.AmmountTooLow);
+        require(msg.value >= game.entryFee, Errors.AmountTooLow);
 
         game.p2 = msg.sender;
         game.p2Choice = p2Choice;
