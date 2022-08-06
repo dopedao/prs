@@ -5,9 +5,12 @@
   "private": true,
   "scripts": {
     "test": "hardhat test --parallel",
+    "test:watch": "hardhat watch test", 
     "test:gas": "hardhat test",
     "dev": "hardhat node",
-    "deploy": "hardhat run scripts/deploy.ts"
+    "deploy": "hardhat run scripts/deploy.ts",
+    "build": "yarn typechain && tsc && copyfiles -u 1 \"types/**/*.d.ts\" dist",
+    "typechain": "typechain --target ethers-v5 --out-dir types 'abis/*.abi'"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.4.7",
@@ -26,6 +29,7 @@
     "ethers": "^5.4.7",
     "hardhat": "^2.10.0",
     "hardhat-gas-reporter": "^1.0.8",
+    "hardhat-watcher": "^2.3.0",
     "solidity-coverage": "^0.7.21",
     "ts-node": ">=8.0.0",
     "typechain": "^8.1.0",
