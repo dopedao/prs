@@ -205,8 +205,8 @@ contract RPS is Ownable {
         emit RemovedGame(p1, gameId, block.timestamp);
     }
 
-    function payoutWithAppliedTax(address winner, uint256 initialBet) public {
-        uint256 pot = (initialBet * 2) - (((initialBet * 2) / 100) * TAX_PERCENT);
+    function payoutWithAppliedTax(address winner, uint256 entryFee) public {
+        uint256 pot = (entryFee * 2) - (((entryFee * 2) / 100) * TAX_PERCENT);
         require(address(this).balance >= pot, Errors.NotEnoughMoneyInContract);
 
         payable(winner).transfer(pot);

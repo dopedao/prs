@@ -512,7 +512,7 @@ export interface RPS extends BaseContract {
 
     payoutWithAppliedTax(
       winner: PromiseOrValue<string>,
-      initialBet: PromiseOrValue<BigNumberish>,
+      entryFee: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -636,7 +636,7 @@ export interface RPS extends BaseContract {
 
   payoutWithAppliedTax(
     winner: PromiseOrValue<string>,
-    initialBet: PromiseOrValue<BigNumberish>,
+    entryFee: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -760,7 +760,7 @@ export interface RPS extends BaseContract {
 
     payoutWithAppliedTax(
       winner: PromiseOrValue<string>,
-      initialBet: PromiseOrValue<BigNumberish>,
+      entryFee: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -974,7 +974,7 @@ export interface RPS extends BaseContract {
 
     payoutWithAppliedTax(
       winner: PromiseOrValue<string>,
-      initialBet: PromiseOrValue<BigNumberish>,
+      entryFee: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -1099,7 +1099,7 @@ export interface RPS extends BaseContract {
 
     payoutWithAppliedTax(
       winner: PromiseOrValue<string>,
-      initialBet: PromiseOrValue<BigNumberish>,
+      entryFee: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
