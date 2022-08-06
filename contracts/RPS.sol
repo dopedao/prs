@@ -72,7 +72,7 @@ contract Rps {
         return game.entryFee;
     }
 
-    function listgames(address player) public view returns (Game[] memory) {
+    function listGames(address player) public view returns (Game[] memory) {
         return Games[player];
     }
 

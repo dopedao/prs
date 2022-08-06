@@ -68,7 +68,7 @@ export interface RpsInterface extends utils.Interface {
     "getHashChoice(bytes32,string)": FunctionFragment;
     "getTimeLeft(address,uint8)": FunctionFragment;
     "joinGame(address,uint8,uint8)": FunctionFragment;
-    "listgames(address)": FunctionFragment;
+    "listGames(address)": FunctionFragment;
     "makeGame(bytes32)": FunctionFragment;
     "payoutWithAppliedTax(address,uint256)": FunctionFragment;
     "rcv()": FunctionFragment;
@@ -94,7 +94,7 @@ export interface RpsInterface extends utils.Interface {
       | "getHashChoice"
       | "getTimeLeft"
       | "joinGame"
-      | "listgames"
+      | "listGames"
       | "makeGame"
       | "payoutWithAppliedTax"
       | "rcv"
@@ -171,7 +171,7 @@ export interface RpsInterface extends utils.Interface {
     ]
   ): string;
   encodeFunctionData(
-    functionFragment: "listgames",
+    functionFragment: "listGames",
     values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
@@ -247,7 +247,7 @@ export interface RpsInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "joinGame", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "listgames", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "listGames", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "makeGame", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "payoutWithAppliedTax",
@@ -460,7 +460,7 @@ export interface Rps extends BaseContract {
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    listgames(
+    listGames(
       player: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<[Rps.GameStructOutput[]]>;
@@ -573,7 +573,7 @@ export interface Rps extends BaseContract {
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  listgames(
+  listGames(
     player: PromiseOrValue<string>,
     overrides?: CallOverrides
   ): Promise<Rps.GameStructOutput[]>;
@@ -686,7 +686,7 @@ export interface Rps extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    listgames(
+    listGames(
       player: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<Rps.GameStructOutput[]>;
@@ -882,7 +882,7 @@ export interface Rps extends BaseContract {
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    listgames(
+    listGames(
       player: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -996,7 +996,7 @@ export interface Rps extends BaseContract {
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    listgames(
+    listGames(
       player: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;

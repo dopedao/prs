@@ -40,7 +40,7 @@ export interface RpsInterface extends utils.Interface {
         "getHashChoice(bytes32,string)": FunctionFragment;
         "getTimeLeft(address,uint8)": FunctionFragment;
         "joinGame(address,uint8,uint8)": FunctionFragment;
-        "listgames(address)": FunctionFragment;
+        "listGames(address)": FunctionFragment;
         "makeGame(bytes32)": FunctionFragment;
         "payoutWithAppliedTax(address,uint256)": FunctionFragment;
         "rcv()": FunctionFragment;
@@ -49,7 +49,7 @@ export interface RpsInterface extends utils.Interface {
         "resolveGameP1(uint8,string)": FunctionFragment;
         "resolveGameP2(address,uint8)": FunctionFragment;
     };
-    getFunction(nameOrSignatureOrTopic: "MIN_ENTRY_FEE" | "REVEAL_TIMEOUT" | "TAX_PERCENT" | "changeMinEntryFee" | "changeRevealTimeout" | "changeTaxPercent" | "chooseWinner" | "getBalance" | "getChoiceFromStr" | "getGame" | "getGameEntryFee" | "getHashChoice" | "getTimeLeft" | "joinGame" | "listgames" | "makeGame" | "payoutWithAppliedTax" | "rcv" | "removeGame" | "removeGameP1" | "resolveGameP1" | "resolveGameP2"): FunctionFragment;
+    getFunction(nameOrSignatureOrTopic: "MIN_ENTRY_FEE" | "REVEAL_TIMEOUT" | "TAX_PERCENT" | "changeMinEntryFee" | "changeRevealTimeout" | "changeTaxPercent" | "chooseWinner" | "getBalance" | "getChoiceFromStr" | "getGame" | "getGameEntryFee" | "getHashChoice" | "getTimeLeft" | "joinGame" | "listGames" | "makeGame" | "payoutWithAppliedTax" | "rcv" | "removeGame" | "removeGameP1" | "resolveGameP1" | "resolveGameP2"): FunctionFragment;
     encodeFunctionData(functionFragment: "MIN_ENTRY_FEE", values?: undefined): string;
     encodeFunctionData(functionFragment: "REVEAL_TIMEOUT", values?: undefined): string;
     encodeFunctionData(functionFragment: "TAX_PERCENT", values?: undefined): string;
@@ -74,7 +74,7 @@ export interface RpsInterface extends utils.Interface {
         PromiseOrValue<BigNumberish>,
         PromiseOrValue<BigNumberish>
     ]): string;
-    encodeFunctionData(functionFragment: "listgames", values: [PromiseOrValue<string>]): string;
+    encodeFunctionData(functionFragment: "listGames", values: [PromiseOrValue<string>]): string;
     encodeFunctionData(functionFragment: "makeGame", values: [PromiseOrValue<BytesLike>]): string;
     encodeFunctionData(functionFragment: "payoutWithAppliedTax", values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]): string;
     encodeFunctionData(functionFragment: "rcv", values?: undefined): string;
@@ -96,7 +96,7 @@ export interface RpsInterface extends utils.Interface {
     decodeFunctionResult(functionFragment: "getHashChoice", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "getTimeLeft", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "joinGame", data: BytesLike): Result;
-    decodeFunctionResult(functionFragment: "listgames", data: BytesLike): Result;
+    decodeFunctionResult(functionFragment: "listGames", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "makeGame", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "payoutWithAppliedTax", data: BytesLike): Result;
     decodeFunctionResult(functionFragment: "rcv", data: BytesLike): Result;
@@ -240,7 +240,7 @@ export interface Rps extends BaseContract {
         joinGame(p1: PromiseOrValue<string>, gameId: PromiseOrValue<BigNumberish>, p2Choice: PromiseOrValue<BigNumberish>, overrides?: PayableOverrides & {
             from?: PromiseOrValue<string>;
         }): Promise<ContractTransaction>;
-        listgames(player: PromiseOrValue<string>, overrides?: CallOverrides): Promise<[Rps.GameStructOutput[]]>;
+        listGames(player: PromiseOrValue<string>, overrides?: CallOverrides): Promise<[Rps.GameStructOutput[]]>;
         makeGame(encChoice: PromiseOrValue<BytesLike>, overrides?: PayableOverrides & {
             from?: PromiseOrValue<string>;
         }): Promise<ContractTransaction>;
@@ -287,7 +287,7 @@ export interface Rps extends BaseContract {
     joinGame(p1: PromiseOrValue<string>, gameId: PromiseOrValue<BigNumberish>, p2Choice: PromiseOrValue<BigNumberish>, overrides?: PayableOverrides & {
         from?: PromiseOrValue<string>;
     }): Promise<ContractTransaction>;
-    listgames(player: PromiseOrValue<string>, overrides?: CallOverrides): Promise<Rps.GameStructOutput[]>;
+    listGames(player: PromiseOrValue<string>, overrides?: CallOverrides): Promise<Rps.GameStructOutput[]>;
     makeGame(encChoice: PromiseOrValue<BytesLike>, overrides?: PayableOverrides & {
         from?: PromiseOrValue<string>;
     }): Promise<ContractTransaction>;
@@ -324,7 +324,7 @@ export interface Rps extends BaseContract {
         getHashChoice(hashChoice: PromiseOrValue<BytesLike>, clearChoice: PromiseOrValue<string>, overrides?: CallOverrides): Promise<number>;
         getTimeLeft(player: PromiseOrValue<string>, gameId: PromiseOrValue<BigNumberish>, overrides?: CallOverrides): Promise<BigNumber>;
         joinGame(p1: PromiseOrValue<string>, gameId: PromiseOrValue<BigNumberish>, p2Choice: PromiseOrValue<BigNumberish>, overrides?: CallOverrides): Promise<void>;
-        listgames(player: PromiseOrValue<string>, overrides?: CallOverrides): Promise<Rps.GameStructOutput[]>;
+        listGames(player: PromiseOrValue<string>, overrides?: CallOverrides): Promise<Rps.GameStructOutput[]>;
         makeGame(encChoice: PromiseOrValue<BytesLike>, overrides?: CallOverrides): Promise<void>;
         payoutWithAppliedTax(winner: PromiseOrValue<string>, initalBet: PromiseOrValue<BigNumberish>, overrides?: CallOverrides): Promise<void>;
         rcv(overrides?: CallOverrides): Promise<void>;
@@ -372,7 +372,7 @@ export interface Rps extends BaseContract {
         joinGame(p1: PromiseOrValue<string>, gameId: PromiseOrValue<BigNumberish>, p2Choice: PromiseOrValue<BigNumberish>, overrides?: PayableOverrides & {
             from?: PromiseOrValue<string>;
         }): Promise<BigNumber>;
-        listgames(player: PromiseOrValue<string>, overrides?: CallOverrides): Promise<BigNumber>;
+        listGames(player: PromiseOrValue<string>, overrides?: CallOverrides): Promise<BigNumber>;
         makeGame(encChoice: PromiseOrValue<BytesLike>, overrides?: PayableOverrides & {
             from?: PromiseOrValue<string>;
         }): Promise<BigNumber>;
@@ -420,7 +420,7 @@ export interface Rps extends BaseContract {
         joinGame(p1: PromiseOrValue<string>, gameId: PromiseOrValue<BigNumberish>, p2Choice: PromiseOrValue<BigNumberish>, overrides?: PayableOverrides & {
             from?: PromiseOrValue<string>;
         }): Promise<PopulatedTransaction>;
-        listgames(player: PromiseOrValue<string>, overrides?: CallOverrides): Promise<PopulatedTransaction>;
+        listGames(player: PromiseOrValue<string>, overrides?: CallOverrides): Promise<PopulatedTransaction>;
         makeGame(encChoice: PromiseOrValue<BytesLike>, overrides?: PayableOverrides & {
             from?: PromiseOrValue<string>;
         }): Promise<PopulatedTransaction>;

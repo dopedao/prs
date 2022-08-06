@@ -19,7 +19,7 @@
   "function getHashChoice(bytes32,string) pure returns (uint8)",
   "function getTimeLeft(address,uint8) view returns (uint256)",
   "function joinGame(address,uint8,uint8) payable",
-  "function listgames(address) view returns (tuple(uint256,bytes32,address,uint8,uint256)[])",
+  "function listGames(address) view returns (tuple(uint256,bytes32,address,uint8,uint256)[])",
   "function makeGame(bytes32) payable",
   "function payoutWithAppliedTax(address,uint256)",
   "function rcv() payable",
