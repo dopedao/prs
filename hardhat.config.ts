@@ -35,7 +35,7 @@ const config: HardhatUserConfig = {
         { command: 'test', params: { noCompile: true, parallel: true } },
       ],
       files: ['./contracts', './test'],
-      ignoredFiles: ['**/.git'],
+      ignoredFiles: ['**/.git', 'dist/*', 'types/*'],
       verbose: true,
     },
   },

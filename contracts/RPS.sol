@@ -1,35 +1,43 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.15;
 
+import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/utils/Address.sol';
+
 library Errors {
-    string constant IndexOutOfBounds = "ioob";
-    string constant CannotRemoveGame = "crg";
-    string constant AmountTooLow = "atl";
-    string constant CannotJoinGame = "cjg";
-    string constant NoSecondPlayer = "nsp";
-    string constant TimerStillRunning = "tsr";
-    string constant NotEnoughMoneyInContract = "nemic";
-    string constant InvalidPassword = "ip";
-    string constant TimerFinished = "tf";
-    string constant NoActiveTimer = "nat";
+    string constant IndexOutOfBounds = 'ioob';
+    string constant CannotRemoveGame = 'crg';
+    string constant AmountTooLow = 'atl';
+    string constant CannotJoinGame = 'cjg';
+    string constant NoSecondPlayer = 'nsp';
+    string constant TimerStillRunning = 'tsr';
+    string constant NotEnoughMoneyInContract = 'nemic';
+    string constant InvalidPassword = 'ip';
+    string constant TimerFinished = 'tf';
+    string constant NoActiveTimer = 'nat';
 }
 
-contract Rps {
+// PAPER ROCK SCISSORS
+// @author DOPE DAO
+// @notice This contract is NOT SECURITY AUDITED. Use at your own risk.
+contract RPS is Ownable {
     /* address public constant OWNER = ; */
     uint256 public MIN_ENTRY_FEE = 10000000 gwei; // 0.01 eth
     uint8 public TAX_PERCENT = 5;
     uint32 public REVEAL_TIMEOUT = 48 hours;
-    address payable owner; /* 0x... */
 
-    enum Choices { ROCK, PAPER, SCISSORS, FORFEIT }
+    enum Choices {
+        ROCK,
+        PAPER,
+        SCISSORS,
+        FORFEIT
+    }
 
     struct Game {
         uint256 entryFee;
         bytes32 p1SaltedChoice;
-
         address p2;
         Choices p2Choice;
-
         uint256 timerStart;
     }
 
@@ -42,11 +50,7 @@ contract Rps {
     event GameDraw(address indexed, Choices, address indexed, Choices, uint256, uint256);
     event PaidOut(address indexed, uint256, uint256);
 
-    modifier onlyOwner {
-        require(msg.sender == owner, "You are not the owner");
-        _;
-    }
-
+    // @notice Default payable function for when contract receives tokens
     function rcv() public payable {}
 
     function getGame(address player, uint8 gameId) public view returns (Game memory) {
@@ -60,14 +64,14 @@ contract Rps {
         return address(this).balance;
     }
 
-    function getTimeLeft(address player, uint8 gameId) public view returns (uint) {
+    function getTimeLeft(address player, uint8 gameId) public view returns (uint256) {
         Game memory game = getGame(player, gameId);
         require(!didTimerRunOut(game.timerStart), Errors.TimerFinished);
         require(game.p2 != address(0), Errors.NoActiveTimer);
         return REVEAL_TIMEOUT - (block.timestamp - game.timerStart);
     }
 
-    function getGameEntryFee(address player, uint8 gameId) public view returns (uint) {
+    function getGameEntryFee(address player, uint8 gameId) public view returns (uint256) {
         Game memory game = getGame(player, gameId);
         return game.entryFee;
     }
@@ -102,7 +106,7 @@ contract Rps {
         address p1,
         uint8 gameId,
         Choices p2Choice
-        ) public payable {
+    ) public payable {
         require(p1 != msg.sender, Errors.CannotJoinGame);
 
         Game[] storage games = Games[p1];
@@ -157,7 +161,7 @@ contract Rps {
         address p1,
         address p2,
         uint256 entryFee
-        ) public {
+    ) public {
         if (p1Choice == p2Choice) {
             payoutWithAppliedTax(p1, entryFee / 2);
             payoutWithAppliedTax(p2, entryFee / 2);
@@ -165,9 +169,11 @@ contract Rps {
             return;
         }
 
-        if (p1Choice == Choices.PAPER && p2Choice == Choices.ROCK
-        || p1Choice == Choices.ROCK && p2Choice == Choices.SCISSORS
-        || p1Choice == Choices.SCISSORS && p2Choice == Choices.PAPER) {
+        if (
+            (p1Choice == Choices.PAPER && p2Choice == Choices.ROCK) ||
+            (p1Choice == Choices.ROCK && p2Choice == Choices.SCISSORS) ||
+            (p1Choice == Choices.SCISSORS && p2Choice == Choices.PAPER)
+        ) {
             payoutWithAppliedTax(p1, entryFee);
             emit WonGameAgainst(p1, p1Choice, p2, p2Choice, entryFee, block.timestamp);
             return;
@@ -184,12 +190,12 @@ contract Rps {
             emit WonGameAgainst(p1, p1Choice, p2, p2Choice, entryFee, block.timestamp);
             return;
         }
-        
+
         payoutWithAppliedTax(p2, entryFee);
         emit WonGameAgainst(p2, p2Choice, p1, p1Choice, entryFee, block.timestamp);
     }
 
-    function removeGame(address p1,  uint8 gameId) public {
+    function removeGame(address p1, uint8 gameId) public {
         Game[] storage games = Games[p1];
         require(games.length != 0, Errors.CannotRemoveGame);
         require(games.length > gameId, Errors.IndexOutOfBounds);
@@ -199,15 +205,15 @@ contract Rps {
         emit RemovedGame(p1, gameId, block.timestamp);
     }
 
-    function payoutWithAppliedTax(address winner, uint256 initalBet) public {
-        uint256 pot = (initalBet * 2) - (((initalBet * 2) / 100) * TAX_PERCENT);
-        require(address(this).balance > pot, Errors.NotEnoughMoneyInContract);
+    function payoutWithAppliedTax(address winner, uint256 initialBet) public {
+        uint256 pot = (initialBet * 2) - (((initialBet * 2) / 100) * TAX_PERCENT);
+        require(address(this).balance >= pot, Errors.NotEnoughMoneyInContract);
 
         payable(winner).transfer(pot);
         emit PaidOut(winner, pot, block.timestamp);
     }
 
-    function didTimerRunOut(uint256 timerStart) private view returns (bool){
+    function didTimerRunOut(uint256 timerStart) private view returns (bool) {
         return block.timestamp > timerStart + REVEAL_TIMEOUT;
     }
 

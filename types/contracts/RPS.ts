@@ -26,9 +26,9 @@ import type {
   TypedListener,
   OnEvent,
   PromiseOrValue,
-} from "./common";
+} from "../common";
 
-export declare namespace Rps {
+export declare namespace RPS {
   export type GameStruct = {
     entryFee: PromiseOrValue<BigNumberish>;
     p1SaltedChoice: PromiseOrValue<BytesLike>;
@@ -52,7 +52,7 @@ export declare namespace Rps {
   };
 }
 
-export interface RpsInterface extends utils.Interface {
+export interface RPSInterface extends utils.Interface {
   functions: {
     "MIN_ENTRY_FEE()": FunctionFragment;
     "REVEAL_TIMEOUT()": FunctionFragment;
@@ -70,12 +70,15 @@ export interface RpsInterface extends utils.Interface {
     "joinGame(address,uint8,uint8)": FunctionFragment;
     "listGames(address)": FunctionFragment;
     "makeGame(bytes32)": FunctionFragment;
+    "owner()": FunctionFragment;
     "payoutWithAppliedTax(address,uint256)": FunctionFragment;
     "rcv()": FunctionFragment;
     "removeGame(address,uint8)": FunctionFragment;
     "removeGameP1(address,uint8)": FunctionFragment;
+    "renounceOwnership()": FunctionFragment;
     "resolveGameP1(uint8,string)": FunctionFragment;
     "resolveGameP2(address,uint8)": FunctionFragment;
+    "transferOwnership(address)": FunctionFragment;
   };
 
   getFunction(
@@ -96,12 +99,15 @@ export interface RpsInterface extends utils.Interface {
       | "joinGame"
       | "listGames"
       | "makeGame"
+      | "owner"
       | "payoutWithAppliedTax"
       | "rcv"
       | "removeGame"
       | "removeGameP1"
+      | "renounceOwnership"
       | "resolveGameP1"
       | "resolveGameP2"
+      | "transferOwnership"
   ): FunctionFragment;
 
   encodeFunctionData(
@@ -178,6 +184,7 @@ export interface RpsInterface extends utils.Interface {
     functionFragment: "makeGame",
     values: [PromiseOrValue<BytesLike>]
   ): string;
+  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "payoutWithAppliedTax",
     values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
@@ -192,12 +199,20 @@ export interface RpsInterface extends utils.Interface {
     values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
+    functionFragment: "renounceOwnership",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "resolveGameP1",
     values: [PromiseOrValue<BigNumberish>, PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
     functionFragment: "resolveGameP2",
     values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "transferOwnership",
+    values: [PromiseOrValue<string>]
   ): string;
 
   decodeFunctionResult(
@@ -249,6 +264,7 @@ export interface RpsInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "joinGame", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "listGames", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "makeGame", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "payoutWithAppliedTax",
     data: BytesLike
@@ -260,6 +276,10 @@ export interface RpsInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "renounceOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "resolveGameP1",
     data: BytesLike
   ): Result;
@@ -267,11 +287,16 @@ export interface RpsInterface extends utils.Interface {
     functionFragment: "resolveGameP2",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
 
   events: {
     "CreatedGame(address,uint256,uint256)": EventFragment;
     "GameDraw(address,uint8,address,uint8,uint256,uint256)": EventFragment;
     "JoinedGameOf(address,address,uint256,uint256,uint256)": EventFragment;
+    "OwnershipTransferred(address,address)": EventFragment;
     "PaidOut(address,uint256,uint256)": EventFragment;
     "RemovedGame(address,uint8,uint256)": EventFragment;
     "WonGameAgainst(address,uint8,address,uint8,uint256,uint256)": EventFragment;
@@ -280,6 +305,7 @@ export interface RpsInterface extends utils.Interface {
   getEvent(nameOrSignatureOrTopic: "CreatedGame"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "GameDraw"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "JoinedGameOf"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "PaidOut"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RemovedGame"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "WonGameAgainst"): EventFragment;
@@ -326,6 +352,18 @@ export type JoinedGameOfEvent = TypedEvent<
 
 export type JoinedGameOfEventFilter = TypedEventFilter<JoinedGameOfEvent>;
 
+export interface OwnershipTransferredEventObject {
+  previousOwner: string;
+  newOwner: string;
+}
+export type OwnershipTransferredEvent = TypedEvent<
+  [string, string],
+  OwnershipTransferredEventObject
+>;
+
+export type OwnershipTransferredEventFilter =
+  TypedEventFilter<OwnershipTransferredEvent>;
+
 export interface PaidOutEventObject {
   arg0: string;
   arg1: BigNumber;
@@ -365,12 +403,12 @@ export type WonGameAgainstEvent = TypedEvent<
 
 export type WonGameAgainstEventFilter = TypedEventFilter<WonGameAgainstEvent>;
 
-export interface Rps extends BaseContract {
+export interface RPS extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
 
-  interface: RpsInterface;
+  interface: RPSInterface;
 
   queryFilter<TEvent extends TypedEvent>(
     event: TypedEventFilter<TEvent>,
@@ -433,7 +471,7 @@ export interface Rps extends BaseContract {
       player: PromiseOrValue<string>,
       gameId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
-    ): Promise<[Rps.GameStructOutput]>;
+    ): Promise<[RPS.GameStructOutput]>;
 
     getGameEntryFee(
       player: PromiseOrValue<string>,
@@ -463,16 +501,18 @@ export interface Rps extends BaseContract {
     listGames(
       player: PromiseOrValue<string>,
       overrides?: CallOverrides
-    ): Promise<[Rps.GameStructOutput[]]>;
+    ): Promise<[RPS.GameStructOutput[]]>;
 
     makeGame(
       encChoice: PromiseOrValue<BytesLike>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    owner(overrides?: CallOverrides): Promise<[string]>;
+
     payoutWithAppliedTax(
       winner: PromiseOrValue<string>,
-      initalBet: PromiseOrValue<BigNumberish>,
+      initialBet: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -492,6 +532,10 @@ export interface Rps extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    renounceOwnership(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     resolveGameP1(
       gameId: PromiseOrValue<BigNumberish>,
       movePw: PromiseOrValue<string>,
@@ -501,6 +545,11 @@ export interface Rps extends BaseContract {
     resolveGameP2(
       p1: PromiseOrValue<string>,
       gameId: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    transferOwnership(
+      newOwner: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
   };
@@ -546,7 +595,7 @@ export interface Rps extends BaseContract {
     player: PromiseOrValue<string>,
     gameId: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
-  ): Promise<Rps.GameStructOutput>;
+  ): Promise<RPS.GameStructOutput>;
 
   getGameEntryFee(
     player: PromiseOrValue<string>,
@@ -576,16 +625,18 @@ export interface Rps extends BaseContract {
   listGames(
     player: PromiseOrValue<string>,
     overrides?: CallOverrides
-  ): Promise<Rps.GameStructOutput[]>;
+  ): Promise<RPS.GameStructOutput[]>;
 
   makeGame(
     encChoice: PromiseOrValue<BytesLike>,
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  owner(overrides?: CallOverrides): Promise<string>;
+
   payoutWithAppliedTax(
     winner: PromiseOrValue<string>,
-    initalBet: PromiseOrValue<BigNumberish>,
+    initialBet: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -605,6 +656,10 @@ export interface Rps extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  renounceOwnership(
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   resolveGameP1(
     gameId: PromiseOrValue<BigNumberish>,
     movePw: PromiseOrValue<string>,
@@ -614,6 +669,11 @@ export interface Rps extends BaseContract {
   resolveGameP2(
     p1: PromiseOrValue<string>,
     gameId: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  transferOwnership(
+    newOwner: PromiseOrValue<string>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -659,7 +719,7 @@ export interface Rps extends BaseContract {
       player: PromiseOrValue<string>,
       gameId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
-    ): Promise<Rps.GameStructOutput>;
+    ): Promise<RPS.GameStructOutput>;
 
     getGameEntryFee(
       player: PromiseOrValue<string>,
@@ -689,16 +749,18 @@ export interface Rps extends BaseContract {
     listGames(
       player: PromiseOrValue<string>,
       overrides?: CallOverrides
-    ): Promise<Rps.GameStructOutput[]>;
+    ): Promise<RPS.GameStructOutput[]>;
 
     makeGame(
       encChoice: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
     ): Promise<void>;
 
+    owner(overrides?: CallOverrides): Promise<string>;
+
     payoutWithAppliedTax(
       winner: PromiseOrValue<string>,
-      initalBet: PromiseOrValue<BigNumberish>,
+      initialBet: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -716,6 +778,8 @@ export interface Rps extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    renounceOwnership(overrides?: CallOverrides): Promise<void>;
+
     resolveGameP1(
       gameId: PromiseOrValue<BigNumberish>,
       movePw: PromiseOrValue<string>,
@@ -725,6 +789,11 @@ export interface Rps extends BaseContract {
     resolveGameP2(
       p1: PromiseOrValue<string>,
       gameId: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    transferOwnership(
+      newOwner: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<void>;
   };
@@ -772,6 +841,15 @@ export interface Rps extends BaseContract {
       arg3?: null,
       arg4?: null
     ): JoinedGameOfEventFilter;
+
+    "OwnershipTransferred(address,address)"(
+      previousOwner?: PromiseOrValue<string> | null,
+      newOwner?: PromiseOrValue<string> | null
+    ): OwnershipTransferredEventFilter;
+    OwnershipTransferred(
+      previousOwner?: PromiseOrValue<string> | null,
+      newOwner?: PromiseOrValue<string> | null
+    ): OwnershipTransferredEventFilter;
 
     "PaidOut(address,uint256,uint256)"(
       arg0?: PromiseOrValue<string> | null,
@@ -892,9 +970,11 @@ export interface Rps extends BaseContract {
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    owner(overrides?: CallOverrides): Promise<BigNumber>;
+
     payoutWithAppliedTax(
       winner: PromiseOrValue<string>,
-      initalBet: PromiseOrValue<BigNumberish>,
+      initialBet: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -914,6 +994,10 @@ export interface Rps extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    renounceOwnership(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     resolveGameP1(
       gameId: PromiseOrValue<BigNumberish>,
       movePw: PromiseOrValue<string>,
@@ -923,6 +1007,11 @@ export interface Rps extends BaseContract {
     resolveGameP2(
       p1: PromiseOrValue<string>,
       gameId: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    transferOwnership(
+      newOwner: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
   };
@@ -1006,9 +1095,11 @@ export interface Rps extends BaseContract {
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
+    owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     payoutWithAppliedTax(
       winner: PromiseOrValue<string>,
-      initalBet: PromiseOrValue<BigNumberish>,
+      initialBet: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1028,6 +1119,10 @@ export interface Rps extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
+    renounceOwnership(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
     resolveGameP1(
       gameId: PromiseOrValue<BigNumberish>,
       movePw: PromiseOrValue<string>,
@@ -1037,6 +1132,11 @@ export interface Rps extends BaseContract {
     resolveGameP2(
       p1: PromiseOrValue<string>,
       gameId: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    transferOwnership(
+      newOwner: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
   };

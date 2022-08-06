@@ -13,15 +13,15 @@ enum Choices {
 
 describe('Rock, Paper, Scissors', function () {
   async function deployRps() {
-    const Rps = await ethers.getContractFactory('Rps');
-    const rps = await Rps.deploy();
+    const RPS = await ethers.getContractFactory('RPS');
+    const rps = await RPS.deploy();
 
     return { rps };
   }
 
   async function createGame() {
-    const Rps = await ethers.getContractFactory('Rps');
-    const rps = await Rps.deploy();
+    const RPS = await ethers.getContractFactory('RPS');
+    const rps = await RPS.deploy();
 
     const [p1] = await ethers.getSigners();
 
@@ -147,7 +147,7 @@ describe('Rock, Paper, Scissors', function () {
       );
     });
 
-    it('Should revert if game doesnt have a second player', async function () {
+    it('Should revert if game does not have a second player', async function () {
       const { rps, p1, clearChoice } = await loadFixture(createGame);
 
       await expect(rps.connect(p1).resolveGameP1(0, clearChoice)).to.be.revertedWith(
@@ -179,8 +179,8 @@ describe('Rock, Paper, Scissors', function () {
 
   describe('resolveGameP2', function () {
     it("Shouldn't let p2 resolve the game if timer is still running", async function () {
-      const Rps = await ethers.getContractFactory('Rps');
-      const rps = await Rps.deploy();
+      const RPS = await ethers.getContractFactory('RPS');
+      const rps = await RPS.deploy();
 
       const [p1] = await ethers.getSigners();
 
@@ -201,8 +201,8 @@ describe('Rock, Paper, Scissors', function () {
     });
 
     it("Shouldn't let p2 resolve the game if game doesn't have a second player", async function () {
-      const Rps = await ethers.getContractFactory('Rps');
-      const rps = await Rps.deploy();
+      const RPS = await ethers.getContractFactory('RPS');
+      const rps = await RPS.deploy();
 
       const [p1] = await ethers.getSigners();
 
@@ -222,8 +222,8 @@ describe('Rock, Paper, Scissors', function () {
     });
 
     it('Should clean up after resolve', async function () {
-      const Rps = await ethers.getContractFactory('Rps');
-      const rps = await Rps.deploy();
+      const RPS = await ethers.getContractFactory('RPS');
+      const rps = await RPS.deploy();
 
       const [p1] = await ethers.getSigners();
 
@@ -245,8 +245,8 @@ describe('Rock, Paper, Scissors', function () {
     });
 
     it('Should let p2 resolve the game if the timer ran out', async function () {
-      const Rps = await ethers.getContractFactory('Rps');
-      const rps = await Rps.deploy();
+      const RPS = await ethers.getContractFactory('RPS');
+      const rps = await RPS.deploy();
 
       const [p1] = await ethers.getSigners();
 
@@ -402,7 +402,7 @@ describe('Rock, Paper, Scissors', function () {
       await expect(rps.payoutWithAppliedTax(p1.address, entryFee)).to.revertedWith(ERRORS.NotEnoughMoneyInContract);
     });
 
-    it('Should applay tax', async function () {
+    it('Should apply tax', async function () {
       const { rps } = await loadFixture(deployRps);
       const [p1] = await ethers.getSigners();
 
@@ -482,8 +482,8 @@ describe('Rock, Paper, Scissors', function () {
 
   describe('Concurrency Tests', function () {
     it('Should allow multiple games', async function () {
-      const Rps = await ethers.getContractFactory('Rps');
-      const rps = await Rps.deploy();
+      const RPS = await ethers.getContractFactory('RPS');
+      const rps = await RPS.deploy();
 
       const [p1, p2] = await ethers.getSigners();
       const gameIndex = 0;
