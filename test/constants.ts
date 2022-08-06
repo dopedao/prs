@@ -10,3 +10,9 @@ export const ERRORS = {
   TimerFinished: 'tf',
   NoActiveTimer: 'nat',
 };
+
+export enum CHOICES {
+  ROCK,
+  PAPER,
+  SCISSORS,
+}

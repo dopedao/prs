@@ -3,37 +3,10 @@ import { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers, network } from 'hardhat';
-import { ERRORS } from './constants';
-
-enum Choices {
-  ROCK,
-  PAPER,
-  SCISSORS,
-}
+import { ERRORS, CHOICES } from './constants';
+import {deployRps, createGame} from './fixtures';
 
 describe('Rock, Paper, Scissors', function () {
-  async function deployRps() {
-    const RPS = await ethers.getContractFactory('RPS');
-    const rps = await RPS.deploy();
-
-    return { rps };
-  }
-
-  async function createGame() {
-    const RPS = await ethers.getContractFactory('RPS');
-    const rps = await RPS.deploy();
-
-    const [p1] = await ethers.getSigners();
-
-    const clearChoice = Choices.PAPER + '-' + 'test';
-    const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
-
-    const entryFee = ethers.utils.parseEther('0.1'); /* 0.1 Eth */
-
-    await rps.connect(p1).makeGame(hashedChoice, { value: entryFee });
-
-    return { rps, p1, clearChoice, entryFee };
-  }
 
   describe('makeGame', function () {
     it('Should create a game', async function () {
@@ -57,7 +30,7 @@ describe('Rock, Paper, Scissors', function () {
       const { rps } = await loadFixture(deployRps);
       const [p1] = await ethers.getSigners();
 
-      const clearChoice = Choices.PAPER + '-' + 'test';
+      const clearChoice = CHOICES.PAPER + '-' + 'test';
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
       const weiAmount = BigNumber.from('900000000000000'); /* 0.09 Eth */
@@ -72,7 +45,7 @@ describe('Rock, Paper, Scissors', function () {
     it('Should let p2 join the game', async function () {
       const { rps, p1, entryFee } = await loadFixture(createGame);
       const [_, p2] = await ethers.getSigners();
-      const p2Choice = Choices.PAPER;
+      const p2Choice = CHOICES.PAPER;
       const gameIndex = 0;
 
       await rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
@@ -86,7 +59,7 @@ describe('Rock, Paper, Scissors', function () {
     it('Should revert on too few tokens sent by p2', async function () {
       const { rps, p1 } = await loadFixture(createGame);
       const [_, p2] = await ethers.getSigners();
-      const p2Choice = Choices.PAPER;
+      const p2Choice = CHOICES.PAPER;
       const gameIndex = 0;
 
       await expect(
@@ -99,7 +72,7 @@ describe('Rock, Paper, Scissors', function () {
     it('Should revert on index out of bounds p2', async function () {
       const { rps, p1, entryFee } = await loadFixture(createGame);
       const [_, p2] = await ethers.getSigners();
-      const p2Choice = Choices.PAPER;
+      const p2Choice = CHOICES.PAPER;
       const gameIndex = 1;
 
       await expect(
@@ -109,7 +82,7 @@ describe('Rock, Paper, Scissors', function () {
 
     it('Should revert on player joining his own game', async function () {
       const { rps, p1, entryFee } = await loadFixture(createGame);
-      const p1Choice = Choices.PAPER;
+      const p1Choice = CHOICES.PAPER;
       const gameIndex = 0;
 
       await expect(
@@ -120,8 +93,8 @@ describe('Rock, Paper, Scissors', function () {
     it('Should revert if game already has a second player', async function () {
       const { rps, p1, entryFee } = await loadFixture(createGame);
       const [_, p2, p3] = await ethers.getSigners();
-      const p2Choice = Choices.PAPER;
-      const p3Choice = Choices.ROCK;
+      const p2Choice = CHOICES.PAPER;
+      const p3Choice = CHOICES.ROCK;
       const gameIndex = 0;
 
       await rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
@@ -135,7 +108,7 @@ describe('Rock, Paper, Scissors', function () {
     it('Should revert on index out of bounds', async function () {
       const { rps, p1, clearChoice, entryFee } = await loadFixture(createGame);
       const [_, p2] = await ethers.getSigners();
-      const p2Choice = Choices.PAPER;
+      const p2Choice = CHOICES.PAPER;
       const gameIndex = 0;
 
       await rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
@@ -159,7 +132,7 @@ describe('Rock, Paper, Scissors', function () {
       const { rps, p1, clearChoice, entryFee } = await loadFixture(createGame);
       const [_, p2] = await ethers.getSigners();
       const gameIndex = 0;
-      const p2Choice = Choices.PAPER;
+      const p2Choice = CHOICES.PAPER;
       await rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
 
       await expect(await rps.connect(p1).resolveGameP1(gameIndex, clearChoice)).to.not.reverted;
@@ -184,7 +157,7 @@ describe('Rock, Paper, Scissors', function () {
 
       const [p1] = await ethers.getSigners();
 
-      const clearChoice = Choices.PAPER + '-' + 'test';
+      const clearChoice = CHOICES.PAPER + '-' + 'test';
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
       const entryFee = ethers.utils.parseEther('0.1'); /* 0.1 Eth */
@@ -193,7 +166,7 @@ describe('Rock, Paper, Scissors', function () {
 
       const [_, p2] = await ethers.getSigners();
       const gameIndex = 0;
-      const p2Choice = Choices.PAPER;
+      const p2Choice = CHOICES.PAPER;
 
       await rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
 
@@ -206,7 +179,7 @@ describe('Rock, Paper, Scissors', function () {
 
       const [p1] = await ethers.getSigners();
 
-      const clearChoice = Choices.PAPER + '-' + 'test';
+      const clearChoice = CHOICES.PAPER + '-' + 'test';
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
       const entryFee = ethers.utils.parseEther('0.1'); /* 0.1 Eth */
@@ -227,7 +200,7 @@ describe('Rock, Paper, Scissors', function () {
 
       const [p1] = await ethers.getSigners();
 
-      const clearChoice = Choices.PAPER + '-' + 'test';
+      const clearChoice = CHOICES.PAPER + '-' + 'test';
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
       const entryFee = ethers.utils.parseEther('0.1'); /* 0.1 Eth */
@@ -235,7 +208,7 @@ describe('Rock, Paper, Scissors', function () {
       await rps.connect(p1).makeGame(hashedChoice, { value: entryFee });
       const [_, p2] = await ethers.getSigners();
       const gameIndex = 0;
-      const p2Choice = Choices.PAPER;
+      const p2Choice = CHOICES.PAPER;
       await rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
       await rps.connect(p1).resolveGameP1(gameIndex, clearChoice);
 
@@ -250,7 +223,7 @@ describe('Rock, Paper, Scissors', function () {
 
       const [p1] = await ethers.getSigners();
 
-      const clearChoice = Choices.PAPER + '-' + 'test';
+      const clearChoice = CHOICES.PAPER + '-' + 'test';
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
       const entryFee = ethers.utils.parseEther('0.1'); /* 0.1 Eth */
@@ -260,7 +233,7 @@ describe('Rock, Paper, Scissors', function () {
       const [_, p2] = await ethers.getSigners();
       const gameIndex = 0;
 
-      const p2Choice = Choices.PAPER;
+      const p2Choice = CHOICES.PAPER;
       await rps.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
 
       await network.provider.send('evm_increaseTime', [revealTimeout]);
@@ -283,7 +256,7 @@ describe('Rock, Paper, Scissors', function () {
     it('Should return Scissors', async function () {
       const { rps } = await loadFixture(deployRps);
       const [p1] = await ethers.getSigners();
-      const choice = Choices.SCISSORS;
+      const choice = CHOICES.SCISSORS;
 
       const clearChoice = `${choice}-test`;
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
@@ -294,7 +267,7 @@ describe('Rock, Paper, Scissors', function () {
     it('Should return Paper', async function () {
       const { rps } = await loadFixture(deployRps);
       const [p1] = await ethers.getSigners();
-      const choice = Choices.PAPER;
+      const choice = CHOICES.PAPER;
 
       const clearChoice = `${choice}-test`;
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
@@ -305,7 +278,7 @@ describe('Rock, Paper, Scissors', function () {
     it('Should return Rock', async function () {
       const { rps } = await loadFixture(deployRps);
       const [p1] = await ethers.getSigners();
-      const choice = Choices.ROCK;
+      const choice = CHOICES.ROCK;
 
       const clearChoice = `${choice}-test`;
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
@@ -319,8 +292,8 @@ describe('Rock, Paper, Scissors', function () {
       const { rps } = await loadFixture(deployRps);
       const [p1, p2] = await ethers.getSigners();
 
-      const p1Choice = Choices.PAPER;
-      const p2Choice = Choices.ROCK;
+      const p1Choice = CHOICES.PAPER;
+      const p2Choice = CHOICES.ROCK;
       const entryFee = parseEther('0.1');
       await rps.connect(p1).rcv({ value: entryFee.mul(2) });
 
@@ -337,8 +310,8 @@ describe('Rock, Paper, Scissors', function () {
       const { rps } = await loadFixture(deployRps);
       const [p1, p2] = await ethers.getSigners();
 
-      const p1Choice = Choices.ROCK;
-      const p2Choice = Choices.SCISSORS;
+      const p1Choice = CHOICES.ROCK;
+      const p2Choice = CHOICES.SCISSORS;
       const entryFee = parseEther('0.1');
       await rps.connect(p1).rcv({ value: entryFee.mul(2) });
 
@@ -355,8 +328,8 @@ describe('Rock, Paper, Scissors', function () {
       const { rps } = await loadFixture(deployRps);
       const [p1, p2] = await ethers.getSigners();
 
-      const p1Choice = Choices.SCISSORS;
-      const p2Choice = Choices.PAPER;
+      const p1Choice = CHOICES.SCISSORS;
+      const p2Choice = CHOICES.PAPER;
       const entryFee = parseEther('0.1');
       await rps.connect(p1).rcv({ value: entryFee.mul(2) });
 
@@ -373,8 +346,8 @@ describe('Rock, Paper, Scissors', function () {
       const { rps } = await loadFixture(deployRps);
       const [p1, p2] = await ethers.getSigners();
 
-      const p1Choice = Choices.PAPER;
-      const p2Choice = Choices.PAPER;
+      const p1Choice = CHOICES.PAPER;
+      const p2Choice = CHOICES.PAPER;
       const entryFee = parseEther('0.1');
       await rps.connect(p1).rcv({ value: entryFee.mul(2) });
 
@@ -450,7 +423,7 @@ describe('Rock, Paper, Scissors', function () {
       const weiAmount = parseEther('0.1'); /* 0.1 Eth */
 
       await rps.connect(p1).makeGame(hashedChoice, { value: weiAmount });
-      await rps.connect(p2).joinGame(p1.address, w1, Choices.PAPER, { value: weiAmount });
+      await rps.connect(p2).joinGame(p1.address, w1, CHOICES.PAPER, { value: weiAmount });
       const p2Bal = await p2.getBalance();
 
       await rps.connect(p1).removeGameP1(p1.address, w1);
@@ -472,7 +445,7 @@ describe('Rock, Paper, Scissors', function () {
       const weiAmount = parseEther('0.1'); /* 0.1 Eth */
 
       await rps.connect(p1).makeGame(hashedChoice, { value: weiAmount });
-      await rps.connect(p2).joinGame(p1.address, w1, Choices.PAPER, { value: weiAmount });
+      await rps.connect(p2).joinGame(p1.address, w1, CHOICES.PAPER, { value: weiAmount });
 
       await expect(rps.connect(p2).removeGameP1(p1.address, w1)).to.be.revertedWith(
         ERRORS.CannotRemoveGame,
@@ -487,9 +460,9 @@ describe('Rock, Paper, Scissors', function () {
 
       const [p1, p2] = await ethers.getSigners();
       const gameIndex = 0;
-      const p2Choice = Choices.PAPER;
+      const p2Choice = CHOICES.PAPER;
 
-      const clearChoice = Choices.PAPER + '-' + 'test';
+      const clearChoice = CHOICES.PAPER + '-' + 'test';
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
       const entryFee = ethers.utils.parseEther('0.1');
