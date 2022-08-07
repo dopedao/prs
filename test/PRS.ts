@@ -8,7 +8,7 @@ import { ERRORS, CHOICES } from './lib/constants';
 import { deployPrs, createGame } from './lib/helpers';
 import { getRandomNumber } from './lib/utils';
 
-describe('PAPER, Rock, Scissors', function () {
+describe('PRS', function () {
   describe('makeGame', function () {
     it('Should create a game', async function () {
       const { prs, p1 } = await deployPrs();
@@ -33,9 +33,9 @@ describe('PAPER, Rock, Scissors', function () {
 
       const weiAmount = ethers.BigNumber.from('900000000000000'); /* 0.09 Eth */
 
-      await expect(prs.connect(p1).
-        makeGame(hashedChoice, { value: weiAmount })).
-        to.be.revertedWith(ERRORS.AmountTooLow,);
+      await expect(prs.connect(p1).makeGame(hashedChoice, { value: weiAmount })).to.be.revertedWith(
+        ERRORS.AmountTooLow,
+      );
     });
   });
 
@@ -372,7 +372,7 @@ describe('PAPER, Rock, Scissors', function () {
       const { prs, p1 } = await deployPrs();
 
       const initialEntryFee = ethers.utils.parseEther('0.5');
-      const TAX = await await prs.TAX_PERCENT();
+      const TAX = await prs.TAX_PERCENT();
 
       const payout = initialEntryFee.mul(2).sub(initialEntryFee.mul(2).div(100).mul(TAX));
       const expectedBal = initialEntryFee.mul(2).sub(payout);
@@ -439,50 +439,6 @@ describe('PAPER, Rock, Scissors', function () {
       await expect(prs.connect(p2).removeGameP1(p1.address, w1)).to.be.revertedWith(
         ERRORS.CannotRemoveGame,
       );
-    });
-  });
-
-  describe('Concurrency Tests', function () {
-    it('Should allow multiple games', async function () {
-      const { prs, p1, p2 } = await deployPrs();
-      const numGames = getRandomNumber(2,9);
-      const entryFee = 0.1;
-      const entryFeeParsed = ethers.utils.parseEther(entryFee.toString());
-      const gameIndex = 0;
-      const p2Choice = CHOICES.PAPER;
-
-      const clearChoice = CHOICES.PAPER + '-' + 'test';
-      const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
-
-      for (let i = 0; i < numGames; i++) {
-        await prs.connect(p1).makeGame(hashedChoice, { value: entryFeeParsed });
-      }
-
-      for (let i = 0; i < numGames; i++) {
-        await prs.connect(p2).joinGame(p1.address, i, p2Choice, { value: entryFeeParsed });
-      }
-
-      const expectedEther = (numGames * entryFee * 2).toString();
-      expect(await await prs.getBalance()).to.be.approximately(
-        parseEther(expectedEther),
-        parseEther('0.0001'),
-      );
-
-      const p1Bal = await p1.getBalance();
-      const p2Bal = await p2.getBalance();
-
-      for (let i = 0; i < numGames; i++) {
-        expect(await prs.connect(p1).resolveGameP1(gameIndex, clearChoice)).to.not.reverted;
-      }
-
-      // expect(await (await p1.getBalance()).sub(p1Bal)).to.be.approximately(
-      //   parseEther('10'),
-      //   parseEther('1'),
-      // );
-      // expect(await (await p2.getBalance()).sub(p2Bal)).to.be.approximately(
-      //   parseEther('10'),
-      //   parseEther('1'),
-      // );
     });
   });
 });
