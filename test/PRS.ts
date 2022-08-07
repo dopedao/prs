@@ -1,39 +1,37 @@
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
-import { BigNumber, utils } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { ethers, network } from 'hardhat';
+import { Contract, Signer } from 'ethers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ethers, network, deployments } from 'hardhat';
 import { ERRORS, CHOICES } from './constants';
-import {deployPrs, createGame} from './fixtures';
+import { deployPrs, createGame } from './fixtures';
 
 describe('PAPER, Rock, Scissors', function () {
 
   describe('makeGame', function () {
     it('Should create a game', async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1] = await ethers.getSigners();
+      const {prs, p1} = await deployPrs();
 
       const clearChoice = '2-test';
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
-      const weiAmount = BigNumber.from('100000000000000000'); /* 0.1 Eth */
+      const weiAmount = ethers.BigNumber.from('100000000000000000'); /* 0.1 Eth */
 
       await prs.connect(p1).makeGame(hashedChoice, { value: weiAmount });
       const game = await prs.connect(p1).getGame(p1.address, 0);
 
       expect(game.p1SaltedChoice).to.equal(hashedChoice);
       expect(game.entryFee).to.equal(weiAmount);
-      //expect(game.p2).to.equal();
     });
 
     it('Should revert on entryFee below minimum', async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1] = await ethers.getSigners();
-
+      const {prs, p1} = await deployPrs();
+      
       const clearChoice = CHOICES.PAPER + '-' + 'test';
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
-      const weiAmount = BigNumber.from('900000000000000'); /* 0.09 Eth */
+      const weiAmount = ethers.BigNumber.from('900000000000000'); /* 0.09 Eth */
 
       await expect(prs.connect(p1).makeGame(hashedChoice, { value: weiAmount })).to.be.revertedWith(
         ERRORS.AmountTooLow,
@@ -43,7 +41,7 @@ describe('PAPER, Rock, Scissors', function () {
 
   describe('joinGame', function () {
     it('Should let p2 join the game', async function () {
-      const { prs, p1, entryFee } = await loadFixture(createGame);
+      const { prs, p1, entryFee } = await createGame();
       const [_, p2] = await ethers.getSigners();
       const p2Choice = CHOICES.PAPER;
       const gameIndex = 0;
@@ -57,7 +55,7 @@ describe('PAPER, Rock, Scissors', function () {
     });
 
     it('Should revert on too few tokens sent by p2', async function () {
-      const { prs, p1 } = await loadFixture(createGame);
+      const { prs, p1 } = await createGame();
       const [_, p2] = await ethers.getSigners();
       const p2Choice = CHOICES.PAPER;
       const gameIndex = 0;
@@ -65,12 +63,12 @@ describe('PAPER, Rock, Scissors', function () {
       await expect(
         prs
           .connect(p2)
-          .joinGame(p1.address, gameIndex, p2Choice, { value: BigNumber.from('100000000') }),
+          .joinGame(p1.address, gameIndex, p2Choice, { value: ethers.BigNumber.from('100000000') }),
       ).to.be.revertedWith(ERRORS.AmountTooLow);
     });
 
     it('Should revert on index out of bounds p2', async function () {
-      const { prs, p1, entryFee } = await loadFixture(createGame);
+      const { prs, p1, entryFee } = await createGame();
       const [_, p2] = await ethers.getSigners();
       const p2Choice = CHOICES.PAPER;
       const gameIndex = 1;
@@ -81,7 +79,7 @@ describe('PAPER, Rock, Scissors', function () {
     });
 
     it('Should revert on player joining his own game', async function () {
-      const { prs, p1, entryFee } = await loadFixture(createGame);
+      const { prs, p1, entryFee } = await createGame();
       const p1Choice = CHOICES.PAPER;
       const gameIndex = 0;
 
@@ -91,7 +89,7 @@ describe('PAPER, Rock, Scissors', function () {
     });
 
     it('Should revert if game already has a second player', async function () {
-      const { prs, p1, entryFee } = await loadFixture(createGame);
+      const { prs, p1, entryFee } = await createGame();
       const [_, p2, p3] = await ethers.getSigners();
       const p2Choice = CHOICES.PAPER;
       const p3Choice = CHOICES.ROCK;
@@ -106,7 +104,7 @@ describe('PAPER, Rock, Scissors', function () {
 
   describe('resolveGameP1', function () {
     it('Should revert on index out of bounds', async function () {
-      const { prs, p1, clearChoice, entryFee } = await loadFixture(createGame);
+      const { prs, p1, clearChoice, entryFee } = await createGame();
       const [_, p2] = await ethers.getSigners();
       const p2Choice = CHOICES.PAPER;
       const gameIndex = 0;
@@ -121,7 +119,7 @@ describe('PAPER, Rock, Scissors', function () {
     });
 
     it('Should revert if game does not have a second player', async function () {
-      const { prs, p1, clearChoice } = await loadFixture(createGame);
+      const { prs, p1, clearChoice } = await createGame();
 
       await expect(prs.connect(p1).resolveGameP1(0, clearChoice)).to.be.revertedWith(
         ERRORS.NoSecondPlayer,
@@ -129,7 +127,7 @@ describe('PAPER, Rock, Scissors', function () {
     });
 
     it('Should let p1 resolve the game', async function () {
-      const { prs, p1, clearChoice, entryFee } = await loadFixture(createGame);
+      const { prs, p1, clearChoice, entryFee } = await createGame();
       const [_, p2] = await ethers.getSigners();
       const gameIndex = 0;
       const p2Choice = CHOICES.PAPER;
@@ -139,8 +137,7 @@ describe('PAPER, Rock, Scissors', function () {
     });
 
     it("Shouldn't let p1 resolve the game if doesn't have one", async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1] = await ethers.getSigners();
+      const { prs, p1 } = await deployPrs();
       const gameIndex = 0;
       const gameClearChoice = 'test';
 
@@ -170,7 +167,9 @@ describe('PAPER, Rock, Scissors', function () {
 
       await prs.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
 
-      await expect(prs.connect(p2).resolveGameP2(p1.address, gameIndex)).to.revertedWith(ERRORS.TimerStillRunning);
+      await expect(prs.connect(p2).resolveGameP2(p1.address, gameIndex)).to.revertedWith(
+        ERRORS.TimerStillRunning,
+      );
     });
 
     it("Shouldn't let p2 resolve the game if game doesn't have a second player", async function () {
@@ -227,7 +226,7 @@ describe('PAPER, Rock, Scissors', function () {
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
       const entryFee = ethers.utils.parseEther('0.1'); /* 0.1 Eth */
-      const revealTimeout = await await prs.REVEAL_TIMEOUT();
+      const revealTimeout = await prs.REVEAL_TIMEOUT();
 
       await prs.connect(p1).makeGame(hashedChoice, { value: entryFee });
       const [_, p2] = await ethers.getSigners();
@@ -254,8 +253,7 @@ describe('PAPER, Rock, Scissors', function () {
 
   describe('getHashChoice', function () {
     it('Should return Scissors', async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1] = await ethers.getSigners();
+      const { prs, p1 } = await deployPrs();
       const choice = CHOICES.SCISSORS;
 
       const clearChoice = `${choice}-test`;
@@ -265,8 +263,7 @@ describe('PAPER, Rock, Scissors', function () {
     });
 
     it('Should return Paper', async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1] = await ethers.getSigners();
+      const { prs, p1 } = await deployPrs();
       const choice = CHOICES.PAPER;
 
       const clearChoice = `${choice}-test`;
@@ -276,8 +273,7 @@ describe('PAPER, Rock, Scissors', function () {
     });
 
     it('Should return Rock', async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1] = await ethers.getSigners();
+      const { prs, p1 } = await deployPrs();
       const choice = CHOICES.ROCK;
 
       const clearChoice = `${choice}-test`;
@@ -289,8 +285,7 @@ describe('PAPER, Rock, Scissors', function () {
 
   describe('chooseWinner', function () {
     it('Should pay p1 when paper and rock', async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1, p2] = await ethers.getSigners();
+      const { prs, p1, p2 } = await deployPrs();
 
       const p1Choice = CHOICES.PAPER;
       const p2Choice = CHOICES.ROCK;
@@ -307,8 +302,7 @@ describe('PAPER, Rock, Scissors', function () {
     });
 
     it('Should pay p1 when rock and scissors', async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1, p2] = await ethers.getSigners();
+      const { prs, p1, p2 } = await deployPrs();
 
       const p1Choice = CHOICES.ROCK;
       const p2Choice = CHOICES.SCISSORS;
@@ -325,8 +319,7 @@ describe('PAPER, Rock, Scissors', function () {
     });
 
     it('Should pay p1 when scissors and paper', async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1, p2] = await ethers.getSigners();
+      const { prs, p1, p2 } = await deployPrs();
 
       const p1Choice = CHOICES.SCISSORS;
       const p2Choice = CHOICES.PAPER;
@@ -343,8 +336,7 @@ describe('PAPER, Rock, Scissors', function () {
     });
 
     it('Should pay both players when p1==p2', async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1, p2] = await ethers.getSigners();
+      const { prs, p1, p2 } = await deployPrs();
 
       const p1Choice = CHOICES.PAPER;
       const p2Choice = CHOICES.PAPER;
@@ -368,16 +360,16 @@ describe('PAPER, Rock, Scissors', function () {
 
   describe('payoutWithAppliedTax', function () {
     it("Should revert if contract doesn't have enough tokens", async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1] = await ethers.getSigners();
-      const entryFee = utils.parseEther('1');
+      const { prs, p1 } = await deployPrs();
+      const entryFee = ethers.utils.parseEther('1');
 
-      await expect(prs.payoutWithAppliedTax(p1.address, entryFee)).to.revertedWith(ERRORS.NotEnoughMoneyInContract);
+      await expect(prs.payoutWithAppliedTax(p1.address, entryFee)).to.revertedWith(
+        ERRORS.NotEnoughMoneyInContract,
+      );
     });
 
     it('Should apply tax', async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1] = await ethers.getSigners();
+      const { prs, p1 } = await deployPrs();
 
       const initialEntryFee = ethers.utils.parseEther('0.5');
       const TAX = await await prs.TAX_PERCENT();
@@ -394,8 +386,7 @@ describe('PAPER, Rock, Scissors', function () {
 
   describe('removeGame', function () {
     it('Should remove a game and update its position', async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1] = await ethers.getSigners();
+      const { prs, p1 } = await deployPrs();
 
       const clearChoice = '2-test';
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
@@ -413,8 +404,7 @@ describe('PAPER, Rock, Scissors', function () {
     });
 
     it('Should forfeit if game has p2', async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1, p2] = await ethers.getSigners();
+      const { prs, p1, p2 } = await deployPrs();
 
       const clearChoice = '2-test';
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
@@ -435,8 +425,7 @@ describe('PAPER, Rock, Scissors', function () {
     });
 
     it("Should revert if caller isn't the game owner", async function () {
-      const { prs } = await loadFixture(deployPrs);
-      const [p1, p2] = await ethers.getSigners();
+      const { prs, p1, p2 } = await deployPrs();
 
       const clearChoice = '2-test';
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);

@@ -13,10 +13,11 @@
     "node_modules"
   ],
   "include": [
-    "types/**/*",
+    "./hardhat.config.ts",
+    "./deploy",
     "./scripts",
     "./test",
-    "./typechain-types"
+    "./types",
   ],
   "files": ["./hardhat.config.ts"]
 }

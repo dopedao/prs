@@ -1,21 +1,25 @@
-import { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
-import 'hardhat-watcher';
-import 'hardhat-abi-exporter';
-
-import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ethers';
+import '@typechain/hardhat';
 
+import 'hardhat-abi-exporter';
+import 'hardhat-deploy';
+import 'hardhat-watcher';
+
+import { HardhatUserConfig } from 'hardhat/config';
 
 const config: HardhatUserConfig = {
-  solidity: '0.8.15',
-  gasReporter: {
-    enabled: true,
+  solidity: '0.8.9',
+  namedAccounts: {
+    deployer: 0,
   },
   // Use non-standard path common to Forge.
   // If we decide to change later we can.
   paths: {
     sources: 'src',
+  },
+  gasReporter: {
+    enabled: true,
   },
   typechain: {
     outDir: 'dist/types',
@@ -39,7 +43,7 @@ const config: HardhatUserConfig = {
         { command: 'compile', params: { quiet: true } },
         { command: 'test', params: { noCompile: true, parallel: true } },
       ],
-      files: ['./contracts', './test'],
+      files: ['./src', './test'],
       ignoredFiles: ['**/.git', 'dist/*', 'types/*'],
       verbose: true,
     },
