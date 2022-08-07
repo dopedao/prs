@@ -23,7 +23,6 @@
   "function makeGame(bytes32) payable",
   "function owner() view returns (address)",
   "function payoutWithAppliedTax(address,uint256)",
-  "function rcv() payable",
   "function removeGame(address,uint256)",
   "function removeGameP1(address,uint256)",
   "function renounceOwnership()",

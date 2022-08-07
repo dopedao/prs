@@ -21,7 +21,7 @@ describe('PRS-payouts', function () {
     });
 
     it('Should apply tax', async function () {
-      const { prs, p1 } = await deployPrs();
+      const { prs, p1, p2 } = await deployPrs();
 
       const initialEntryFee = ethers.utils.parseEther('0.5');
       const TAX = await prs.TAX_PERCENT();
@@ -29,8 +29,12 @@ describe('PRS-payouts', function () {
       const payout = initialEntryFee.mul(2).sub(initialEntryFee.mul(2).div(100).mul(TAX));
       const expectedBal = initialEntryFee.mul(2).sub(payout);
 
-      await prs.connect(p1).rcv({ value: initialEntryFee.mul(2) });
-      await prs.payoutWithAppliedTax(p1.address, initialEntryFee);
+      await p1.sendTransaction({
+        to: prs.address,
+        value: initialEntryFee.mul(2),
+      });
+
+      await prs.payoutWithAppliedTax(p2.address, initialEntryFee);
 
       await expect(await prs.getBalance()).to.equal(expectedBal);
     });

@@ -1,27 +1,50 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/utils/Address.sol';
+import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
+import { Errors } from './Errors.sol';
 
-library Errors {
-    string constant IndexOutOfBounds = 'ioob';
-    string constant CannotRemoveGame = 'crg';
-    string constant AmountTooLow = 'atl';
-    string constant CannotJoinGame = 'cjg';
-    string constant NoSecondPlayer = 'nsp';
-    string constant TimerStillRunning = 'tsr';
-    string constant NotEnoughMoneyInContract = 'nemic';
-    string constant InvalidPassword = 'ip';
-    string constant TimerFinished = 'tf';
-    string constant NoActiveTimer = 'nat';
-}
-
-// PAPER ROCK SCISSORS
+//                                       .::^^^^::..                               
+//                              .:^!?YPG##&&$$$$$&&#BP5J7~:                        
+//                          .!PB#&$$$$$$$$$$$$$$$$$$$$$$$$&BPJ!:                   
+//                       .!5#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$&BY^                
+//                    .!5&$$$$$$$$$$$$$$$$$#BB##&$$$$$$$$$$$$$$$$$$P^              
+//                  ~5#$$$$$$$$$$$$#G5YJ?!^.  ...:^!?5G#$$$$$$$$$$$$$Y:            
+//                !G$$$$$$$$$$$#57^.                   .~?G&$$$$$$$$$$&J.          
+//              ^G$$$$$$$$$$&P!.                           :?B$$$$$$$$$$#!         
+//             J$$$$$$$$$$#J:                                 !B$$$$$$$$$$5.       
+//           .P$$$$$$$$$#?.                                     ?&$$$$$$$$$G.      
+//          :G$$$$$$$$&?.              .                         :G$$$$$$$$$Y      
+//         ~#$$$$$$$$5:             .Y##Y.                         5$$$$$$$$&:     
+//        Y$$$$$$$$$?              :#$$$$?      .?YJ^               P$$$$$$$$5     
+//       ~$$$$$$$$$?               Y$$$$$Y     ^B$$$$!              .#$$$$$$$$^    
+//       P$$$$$$$$?     ~!^.       P$$$$$?     B$$$$$7               J$$$$$$$$J    
+//      7$$$$$$$$5     ^$$$#BB##Y  !$$$$G      B$$$$G                ^$$$$$$$$J    
+//     ^$$$$$$$$&.      J$$$$$$&Y   7GGY.      Y$$$G.                :&$$$$$$$!    
+//     Y$$$$$$$$G        7$$$$?.               .JP?    !J!~!??^      ^$$$$$$$$^    
+//     7$$$$$$$$#.       :$$$$^                       ?$$$$$$$$~     ?$$$$$$$$^    
+//     :&$$$$$$$$~        G$$$#:                      .5$$$$$#Y:     B$$$$$$$&:    
+//     .#$$$$$$$$7        ^&$$$#^                     .B$$$$J.      7$$$$$$$$?     
+//      5$$$$$$$#.         ^#$$$&7                   .G$$$$!       :#$$$$$$$J      
+//      !$$$$$$$#^          :P$$$$P~               .?#$$$$!        G$$$$$$$Y       
+//      .#$$$$$$$&!           !B$$$$BJ~:      .:~?P&$$$$G~       .P$$$$$$$P        
+//       Y$$$$$$$$$7            !P&$$$$&#GPPPG#&$$$$$$P~        :G$$$$$$$B.        
+//       :&$$$$$$$$$?             :!YG&$$$$$$$$$$$&GJ^         ?&$$$$$$$#:         
+//        7$$$$$$$$$$Y.               .^~7??7!~!!~:         .7B$$$$$$$$G:          
+//         ~B$$$$$$$$$B!                                  ^J#$$$$$$$$&J            
+//           J$$$$$$$$$$BJ~.                           ^JB$$$$$$$$$$P^             
+//            ^G$$$$$$$$$$$#P?^.                   :!YB$$$$$$$$$$$#!               
+//              ?&$$$$$$$$$$$$$#G5?!^:.  .:~7??J5P#&$$$$$$$$$$$&G?.                
+//               .J#$$$$$$$$$$$$$$$$$&#BB#&$$$$$$$$$$$$$$$$$$G7.                   
+//                 .7P#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$&G?^                      
+//                    .^7J5G#$$$$$$$$$$$$$$$$$$$$$$$$&B57:                         
+//                          .^7YPB#&&&$$$&&&&##BG5J7~:                             
+//                                ..::::::::...                          
+//
 // @author DOPE DAO
 // @notice This contract is NOT SECURITY AUDITED. Use at your own risk.
 contract PRS is Ownable {
-    /* address public constant OWNER = ; */
     uint256 public MIN_ENTRY_FEE = 10000000 gwei; // 0.01 eth
     uint256 public TAX_PERCENT = 5;
     uint32 public REVEAL_TIMEOUT = 48 hours;
@@ -50,8 +73,10 @@ contract PRS is Ownable {
     event GameDraw(address indexed, Choices, address indexed, Choices, uint256, uint256);
     event PaidOut(address indexed, uint256, uint256);
 
-    // @notice Default payable function for when contract receives tokens
-    function rcv() public payable {}
+    receive() external payable {
+        // This should be implemented as our generic receive
+        // TODO add balances in memory store
+    }
 
     function getGame(address player, uint256 gameId) public view returns (Game memory) {
         Game[] storage games = Games[player];

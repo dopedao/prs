@@ -71,7 +71,6 @@ export interface PRSInterface extends utils.Interface {
     "makeGame(bytes32)": FunctionFragment;
     "owner()": FunctionFragment;
     "payoutWithAppliedTax(address,uint256)": FunctionFragment;
-    "rcv()": FunctionFragment;
     "removeGame(address,uint256)": FunctionFragment;
     "removeGameP1(address,uint256)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
@@ -99,7 +98,6 @@ export interface PRSInterface extends utils.Interface {
       | "makeGame"
       | "owner"
       | "payoutWithAppliedTax"
-      | "rcv"
       | "removeGame"
       | "removeGameP1"
       | "renounceOwnership"
@@ -183,7 +181,6 @@ export interface PRSInterface extends utils.Interface {
     functionFragment: "payoutWithAppliedTax",
     values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
-  encodeFunctionData(functionFragment: "rcv", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "removeGame",
     values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
@@ -259,7 +256,6 @@ export interface PRSInterface extends utils.Interface {
     functionFragment: "payoutWithAppliedTax",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "rcv", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "removeGame", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "removeGameP1",
@@ -501,10 +497,6 @@ export interface PRS extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    rcv(
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
-
     removeGame(
       p1: PromiseOrValue<string>,
       gameId: PromiseOrValue<BigNumberish>,
@@ -618,10 +610,6 @@ export interface PRS extends BaseContract {
     winner: PromiseOrValue<string>,
     entryFee: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
-  rcv(
-    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   removeGame(
@@ -738,8 +726,6 @@ export interface PRS extends BaseContract {
       entryFee: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
-
-    rcv(overrides?: CallOverrides): Promise<void>;
 
     removeGame(
       p1: PromiseOrValue<string>,
@@ -948,10 +934,6 @@ export interface PRS extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    rcv(
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
-
     removeGame(
       p1: PromiseOrValue<string>,
       gameId: PromiseOrValue<BigNumberish>,
@@ -1066,10 +1048,6 @@ export interface PRS extends BaseContract {
       winner: PromiseOrValue<string>,
       entryFee: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
-    rcv(
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     removeGame(

@@ -141,7 +141,11 @@ describe('PRS-main', function () {
       const p1Choice = CHOICES.PAPER;
       const p2Choice = CHOICES.ROCK;
       const entryFee = parseEther('0.1');
-      await prs.connect(p1).rcv({ value: entryFee.mul(2) });
+
+      await p1.sendTransaction({
+        to: prs.address,
+        value: entryFee.mul(2),
+      });
 
       const p1Bal = await p1.getBalance();
       await prs.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, entryFee);
@@ -158,7 +162,11 @@ describe('PRS-main', function () {
       const p1Choice = CHOICES.ROCK;
       const p2Choice = CHOICES.SCISSORS;
       const entryFee = parseEther('0.1');
-      await prs.connect(p1).rcv({ value: entryFee.mul(2) });
+
+      await p1.sendTransaction({
+        to: prs.address,
+        value: entryFee.mul(2),
+      });
 
       const p1Bal = await p1.getBalance();
       await prs.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, entryFee);
@@ -175,7 +183,11 @@ describe('PRS-main', function () {
       const p1Choice = CHOICES.SCISSORS;
       const p2Choice = CHOICES.PAPER;
       const entryFee = parseEther('0.1');
-      await prs.connect(p1).rcv({ value: entryFee.mul(2) });
+
+      await p1.sendTransaction({
+        to: prs.address,
+        value: entryFee.mul(2),
+      });
 
       const p1Bal = await p1.getBalance();
       await prs.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, entryFee);
@@ -192,7 +204,11 @@ describe('PRS-main', function () {
       const p1Choice = CHOICES.PAPER;
       const p2Choice = CHOICES.PAPER;
       const entryFee = parseEther('0.1');
-      await prs.connect(p1).rcv({ value: entryFee.mul(2) });
+
+      await p1.sendTransaction({
+        to: prs.address,
+        value: entryFee.mul(2),
+      });
 
       const p1Bal = await p1.getBalance();
       const p2Bal = await p2.getBalance();
@@ -228,7 +244,11 @@ describe('PRS-main', function () {
       const payout = initialEntryFee.mul(2).sub(initialEntryFee.mul(2).div(100).mul(TAX));
       const expectedBal = initialEntryFee.mul(2).sub(payout);
 
-      await prs.connect(p1).rcv({ value: initialEntryFee.mul(2) });
+      await p1.sendTransaction({
+        to: prs.address,
+        value: initialEntryFee.mul(2),
+      });
+
       await prs.payoutWithAppliedTax(p1.address, initialEntryFee);
 
       await expect(await prs.getBalance()).to.equal(expectedBal);
