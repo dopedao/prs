@@ -12,8 +12,13 @@ const config: HardhatUserConfig = {
   gasReporter: {
     enabled: true,
   },
+  // Use non-standard path common to Forge.
+  // If we decide to change later we can.
+  paths: {
+    sources: 'src',
+  },
   typechain: {
-    outDir: 'types',
+    outDir: 'dist/types',
     target: 'ethers-v5',
     alwaysGenerateOverloads: false, // should overloads with full signatures like deposit(uint256) be generated always, even if there are no overloads?
     // externalArtifacts: ['externalArtifacts/*.json'], // optional array of glob patterns with external artifacts to process (for example external libs from node_modules)
