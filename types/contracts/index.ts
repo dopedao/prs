@@ -2,4 +2,3 @@
 /* tslint:disable */
 /* eslint-disable */
 export type { PRS } from "./PRS";
-export type { PRS } from "./PRS";

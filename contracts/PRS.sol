@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.15;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
+import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/utils/Address.sol';
 
 library Errors {
@@ -23,7 +23,7 @@ library Errors {
 contract PRS is Ownable {
     /* address public constant OWNER = ; */
     uint256 public MIN_ENTRY_FEE = 10000000 gwei; // 0.01 eth
-    uint8 public TAX_PERCENT = 5;
+    uint256 public TAX_PERCENT = 5;
     uint32 public REVEAL_TIMEOUT = 48 hours;
 
     enum Choices {
@@ -44,7 +44,7 @@ contract PRS is Ownable {
     mapping(address => Game[]) Games;
 
     event CreatedGame(address indexed, uint256, uint256);
-    event RemovedGame(address indexed, uint8, uint256);
+    event RemovedGame(address indexed, uint256, uint256);
     event JoinedGameOf(address indexed, address indexed, uint256, uint256, uint256);
     event WonGameAgainst(address indexed, Choices, address indexed, Choices, uint256, uint256);
     event GameDraw(address indexed, Choices, address indexed, Choices, uint256, uint256);
@@ -53,7 +53,7 @@ contract PRS is Ownable {
     // @notice Default payable function for when contract receives tokens
     function rcv() public payable {}
 
-    function getGame(address player, uint8 gameId) public view returns (Game memory) {
+    function getGame(address player, uint256 gameId) public view returns (Game memory) {
         Game[] storage games = Games[player];
         require(games.length > gameId, Errors.IndexOutOfBounds);
 
@@ -64,14 +64,14 @@ contract PRS is Ownable {
         return address(this).balance;
     }
 
-    function getTimeLeft(address player, uint8 gameId) public view returns (uint256) {
+    function getTimeLeft(address player, uint256 gameId) public view returns (uint256) {
         Game memory game = getGame(player, gameId);
         require(!didTimerRunOut(game.timerStart), Errors.TimerFinished);
         require(game.p2 != address(0), Errors.NoActiveTimer);
         return REVEAL_TIMEOUT - (block.timestamp - game.timerStart);
     }
 
-    function getGameEntryFee(address player, uint8 gameId) public view returns (uint256) {
+    function getGameEntryFee(address player, uint256 gameId) public view returns (uint256) {
         Game memory game = getGame(player, gameId);
         return game.entryFee;
     }
@@ -84,7 +84,7 @@ contract PRS is Ownable {
         MIN_ENTRY_FEE = mintEntryFee;
     }
 
-    function changeTaxPercent(uint8 taxPercent) public onlyOwner {
+    function changeTaxPercent(uint256 taxPercent) public onlyOwner {
         TAX_PERCENT = taxPercent;
     }
 
@@ -104,7 +104,7 @@ contract PRS is Ownable {
 
     function joinGame(
         address p1,
-        uint8 gameId,
+        uint256 gameId,
         Choices p2Choice
     ) public payable {
         require(p1 != msg.sender, Errors.CannotJoinGame);
@@ -122,7 +122,7 @@ contract PRS is Ownable {
         emit JoinedGameOf(msg.sender, p1, gameId, msg.value, block.timestamp);
     }
 
-    function resolveGameP1(uint8 gameId, string calldata movePw) public {
+    function resolveGameP1(uint256 gameId, string calldata movePw) public {
         Game memory game = getGame(msg.sender, gameId);
         require(game.p2 != address(0), Errors.NoSecondPlayer);
 
@@ -132,7 +132,7 @@ contract PRS is Ownable {
         chooseWinner(p1Choice, game.p2Choice, msg.sender, game.p2, game.entryFee);
     }
 
-    function resolveGameP2(address p1, uint8 gameId) public {
+    function resolveGameP2(address p1, uint256 gameId) public {
         Game memory game = getGame(p1, gameId);
         require(game.p2 != address(0), Errors.NoSecondPlayer);
         require(didTimerRunOut(game.timerStart), Errors.TimerStillRunning);
@@ -141,7 +141,7 @@ contract PRS is Ownable {
         payoutWithAppliedTax(msg.sender, game.entryFee);
     }
 
-    function removeGameP1(address p1, uint8 gameId) public {
+    function removeGameP1(address p1, uint256 gameId) public {
         require(msg.sender == p1, Errors.CannotRemoveGame);
         Game[] storage games = Games[msg.sender];
         Game memory game = getGame(p1, gameId);
@@ -195,7 +195,7 @@ contract PRS is Ownable {
         emit WonGameAgainst(p2, p2Choice, p1, p1Choice, entryFee, block.timestamp);
     }
 
-    function removeGame(address p1, uint8 gameId) public {
+    function removeGame(address p1, uint256 gameId) public {
         Game[] storage games = Games[p1];
         require(games.length != 0, Errors.CannotRemoveGame);
         require(games.length > gameId, Errors.IndexOutOfBounds);
@@ -221,10 +221,6 @@ contract PRS is Ownable {
         bytes32 hashedClearChoice = sha256(abi.encodePacked(clearChoice));
         require(hashChoice == hashedClearChoice, Errors.InvalidPassword);
 
-        return getChoiceFromStr(clearChoice);
-    }
-
-    function getChoiceFromStr(string calldata clearChoice) public pure returns (Choices) {
         bytes1 first = bytes(clearChoice)[0];
 
         if (first == 0x30) {

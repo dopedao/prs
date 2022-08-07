@@ -59,25 +59,24 @@ export interface PRSInterface extends utils.Interface {
     "TAX_PERCENT()": FunctionFragment;
     "changeMinEntryFee(uint256)": FunctionFragment;
     "changeRevealTimeout(uint32)": FunctionFragment;
-    "changeTaxPercent(uint8)": FunctionFragment;
+    "changeTaxPercent(uint256)": FunctionFragment;
     "chooseWinner(uint8,uint8,address,address,uint256)": FunctionFragment;
     "getBalance()": FunctionFragment;
-    "getChoiceFromStr(string)": FunctionFragment;
-    "getGame(address,uint8)": FunctionFragment;
-    "getGameEntryFee(address,uint8)": FunctionFragment;
+    "getGame(address,uint256)": FunctionFragment;
+    "getGameEntryFee(address,uint256)": FunctionFragment;
     "getHashChoice(bytes32,string)": FunctionFragment;
-    "getTimeLeft(address,uint8)": FunctionFragment;
-    "joinGame(address,uint8,uint8)": FunctionFragment;
+    "getTimeLeft(address,uint256)": FunctionFragment;
+    "joinGame(address,uint256,uint8)": FunctionFragment;
     "listGames(address)": FunctionFragment;
     "makeGame(bytes32)": FunctionFragment;
     "owner()": FunctionFragment;
     "payoutWithAppliedTax(address,uint256)": FunctionFragment;
     "rcv()": FunctionFragment;
-    "removeGame(address,uint8)": FunctionFragment;
-    "removeGameP1(address,uint8)": FunctionFragment;
+    "removeGame(address,uint256)": FunctionFragment;
+    "removeGameP1(address,uint256)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
-    "resolveGameP1(uint8,string)": FunctionFragment;
-    "resolveGameP2(address,uint8)": FunctionFragment;
+    "resolveGameP1(uint256,string)": FunctionFragment;
+    "resolveGameP2(address,uint256)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
   };
 
@@ -91,7 +90,6 @@ export interface PRSInterface extends utils.Interface {
       | "changeTaxPercent"
       | "chooseWinner"
       | "getBalance"
-      | "getChoiceFromStr"
       | "getGame"
       | "getGameEntryFee"
       | "getHashChoice"
@@ -147,10 +145,6 @@ export interface PRSInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "getBalance",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "getChoiceFromStr",
-    values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
     functionFragment: "getGame",
@@ -244,10 +238,6 @@ export interface PRSInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "getBalance", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "getChoiceFromStr",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "getGame", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getGameEntryFee",
@@ -298,7 +288,7 @@ export interface PRSInterface extends utils.Interface {
     "JoinedGameOf(address,address,uint256,uint256,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
     "PaidOut(address,uint256,uint256)": EventFragment;
-    "RemovedGame(address,uint8,uint256)": EventFragment;
+    "RemovedGame(address,uint256,uint256)": EventFragment;
     "WonGameAgainst(address,uint8,address,uint8,uint256,uint256)": EventFragment;
   };
 
@@ -378,11 +368,11 @@ export type PaidOutEventFilter = TypedEventFilter<PaidOutEvent>;
 
 export interface RemovedGameEventObject {
   arg0: string;
-  arg1: number;
+  arg1: BigNumber;
   arg2: BigNumber;
 }
 export type RemovedGameEvent = TypedEvent<
-  [string, number, BigNumber],
+  [string, BigNumber, BigNumber],
   RemovedGameEventObject
 >;
 
@@ -434,7 +424,7 @@ export interface PRS extends BaseContract {
 
     REVEAL_TIMEOUT(overrides?: CallOverrides): Promise<[number]>;
 
-    TAX_PERCENT(overrides?: CallOverrides): Promise<[number]>;
+    TAX_PERCENT(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     changeMinEntryFee(
       mintEntryFee: PromiseOrValue<BigNumberish>,
@@ -461,11 +451,6 @@ export interface PRS extends BaseContract {
     ): Promise<ContractTransaction>;
 
     getBalance(overrides?: CallOverrides): Promise<[BigNumber]>;
-
-    getChoiceFromStr(
-      clearChoice: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<[number]>;
 
     getGame(
       player: PromiseOrValue<string>,
@@ -558,7 +543,7 @@ export interface PRS extends BaseContract {
 
   REVEAL_TIMEOUT(overrides?: CallOverrides): Promise<number>;
 
-  TAX_PERCENT(overrides?: CallOverrides): Promise<number>;
+  TAX_PERCENT(overrides?: CallOverrides): Promise<BigNumber>;
 
   changeMinEntryFee(
     mintEntryFee: PromiseOrValue<BigNumberish>,
@@ -585,11 +570,6 @@ export interface PRS extends BaseContract {
   ): Promise<ContractTransaction>;
 
   getBalance(overrides?: CallOverrides): Promise<BigNumber>;
-
-  getChoiceFromStr(
-    clearChoice: PromiseOrValue<string>,
-    overrides?: CallOverrides
-  ): Promise<number>;
 
   getGame(
     player: PromiseOrValue<string>,
@@ -682,7 +662,7 @@ export interface PRS extends BaseContract {
 
     REVEAL_TIMEOUT(overrides?: CallOverrides): Promise<number>;
 
-    TAX_PERCENT(overrides?: CallOverrides): Promise<number>;
+    TAX_PERCENT(overrides?: CallOverrides): Promise<BigNumber>;
 
     changeMinEntryFee(
       mintEntryFee: PromiseOrValue<BigNumberish>,
@@ -709,11 +689,6 @@ export interface PRS extends BaseContract {
     ): Promise<void>;
 
     getBalance(overrides?: CallOverrides): Promise<BigNumber>;
-
-    getChoiceFromStr(
-      clearChoice: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<number>;
 
     getGame(
       player: PromiseOrValue<string>,
@@ -862,7 +837,7 @@ export interface PRS extends BaseContract {
       arg2?: null
     ): PaidOutEventFilter;
 
-    "RemovedGame(address,uint8,uint256)"(
+    "RemovedGame(address,uint256,uint256)"(
       arg0?: PromiseOrValue<string> | null,
       arg1?: null,
       arg2?: null
@@ -923,11 +898,6 @@ export interface PRS extends BaseContract {
     ): Promise<BigNumber>;
 
     getBalance(overrides?: CallOverrides): Promise<BigNumber>;
-
-    getChoiceFromStr(
-      clearChoice: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
 
     getGame(
       player: PromiseOrValue<string>,
@@ -1048,11 +1018,6 @@ export interface PRS extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     getBalance(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    getChoiceFromStr(
-      clearChoice: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
 
     getGame(
       player: PromiseOrValue<string>,

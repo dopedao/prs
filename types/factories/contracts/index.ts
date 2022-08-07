@@ -2,4 +2,3 @@
 /* tslint:disable */
 /* eslint-disable */
 export { PRS__factory } from "./PRS__factory";
-export { PRS__factory } from "./PRS__factory";
