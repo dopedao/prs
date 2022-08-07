@@ -1,12 +1,12 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const Rps = await ethers.getContractFactory("RPS");
-  const rps = await Rps.deploy();
+  const Rps = await ethers.getContractFactory("PRS");
+  const prs = await Rps.deploy();
 
-  await rps.deployed();
+  await prs.deployed();
 
-  console.log("Rps deployed to:", rps.address);
+  console.log("Rps deployed to:", prs.address);
 }
 
 main().catch((error) => {

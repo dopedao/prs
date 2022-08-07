@@ -1,16 +1,16 @@
 import { ethers } from 'hardhat';
 import { CHOICES } from './constants';
 
-export async function deployRps() {
-  const RPS = await ethers.getContractFactory('RPS');
-  const rps = await RPS.deploy();
+export async function deployPrs() {
+  const PRS = await ethers.getContractFactory('PRS');
+  const prs = await PRS.deploy();
 
-  return { rps };
+  return { prs };
 }
 
 export async function createGame() {
-  const RPS = await ethers.getContractFactory('RPS');
-  const rps = await RPS.deploy();
+  const PRS = await ethers.getContractFactory('PRS');
+  const prs = await PRS.deploy();
 
   const [p1] = await ethers.getSigners();
 
@@ -19,7 +19,7 @@ export async function createGame() {
 
   const entryFee = ethers.utils.parseEther('0.1'); /* 0.1 Eth */
 
-  await rps.connect(p1).makeGame(hashedChoice, { value: entryFee });
+  await prs.connect(p1).makeGame(hashedChoice, { value: entryFee });
 
-  return { rps, p1, clearChoice, entryFee };
+  return { prs, p1, clearChoice, entryFee };
 }

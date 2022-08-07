@@ -28,7 +28,7 @@ import type {
   PromiseOrValue,
 } from "../common";
 
-export declare namespace RPS {
+export declare namespace PRS {
   export type GameStruct = {
     entryFee: PromiseOrValue<BigNumberish>;
     p1SaltedChoice: PromiseOrValue<BytesLike>;
@@ -52,7 +52,7 @@ export declare namespace RPS {
   };
 }
 
-export interface RPSInterface extends utils.Interface {
+export interface PRSInterface extends utils.Interface {
   functions: {
     "MIN_ENTRY_FEE()": FunctionFragment;
     "REVEAL_TIMEOUT()": FunctionFragment;
@@ -403,12 +403,12 @@ export type WonGameAgainstEvent = TypedEvent<
 
 export type WonGameAgainstEventFilter = TypedEventFilter<WonGameAgainstEvent>;
 
-export interface RPS extends BaseContract {
+export interface PRS extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
 
-  interface: RPSInterface;
+  interface: PRSInterface;
 
   queryFilter<TEvent extends TypedEvent>(
     event: TypedEventFilter<TEvent>,
@@ -471,7 +471,7 @@ export interface RPS extends BaseContract {
       player: PromiseOrValue<string>,
       gameId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
-    ): Promise<[RPS.GameStructOutput]>;
+    ): Promise<[PRS.GameStructOutput]>;
 
     getGameEntryFee(
       player: PromiseOrValue<string>,
@@ -501,7 +501,7 @@ export interface RPS extends BaseContract {
     listGames(
       player: PromiseOrValue<string>,
       overrides?: CallOverrides
-    ): Promise<[RPS.GameStructOutput[]]>;
+    ): Promise<[PRS.GameStructOutput[]]>;
 
     makeGame(
       encChoice: PromiseOrValue<BytesLike>,
@@ -595,7 +595,7 @@ export interface RPS extends BaseContract {
     player: PromiseOrValue<string>,
     gameId: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
-  ): Promise<RPS.GameStructOutput>;
+  ): Promise<PRS.GameStructOutput>;
 
   getGameEntryFee(
     player: PromiseOrValue<string>,
@@ -625,7 +625,7 @@ export interface RPS extends BaseContract {
   listGames(
     player: PromiseOrValue<string>,
     overrides?: CallOverrides
-  ): Promise<RPS.GameStructOutput[]>;
+  ): Promise<PRS.GameStructOutput[]>;
 
   makeGame(
     encChoice: PromiseOrValue<BytesLike>,
@@ -719,7 +719,7 @@ export interface RPS extends BaseContract {
       player: PromiseOrValue<string>,
       gameId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
-    ): Promise<RPS.GameStructOutput>;
+    ): Promise<PRS.GameStructOutput>;
 
     getGameEntryFee(
       player: PromiseOrValue<string>,
@@ -749,7 +749,7 @@ export interface RPS extends BaseContract {
     listGames(
       player: PromiseOrValue<string>,
       overrides?: CallOverrides
-    ): Promise<RPS.GameStructOutput[]>;
+    ): Promise<PRS.GameStructOutput[]>;
 
     makeGame(
       encChoice: PromiseOrValue<BytesLike>,
