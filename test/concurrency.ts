@@ -6,12 +6,11 @@ import { ERRORS, CHOICES } from './lib/constants';
 import { deployPrs, createGame } from './lib/helpers';
 import { getRandomNumber } from './lib/utils';
 
-describe('PRS', function () {
+describe('PRS-concurrency', function () {
   describe('Concurrency Tests', function () {
     it('Should allow multiple games', async function () {
       const { prs, p1, p2 } = await deployPrs();
       const numGames = getRandomNumber(2, 7);
-      // const numGames = 5;
       const entryFee = 1;
       const entryFeeEth = ethers.utils.parseEther(entryFee.toString());
       const gameIndex = 0;
