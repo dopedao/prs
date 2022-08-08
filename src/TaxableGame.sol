@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
+import { Errors } from "./Errors.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
@@ -8,8 +9,9 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuar
 abstract contract TaxableGame is Ownable, ReentrancyGuard {
     uint256 public MIN_ENTRY_FEE = 10000000 gwei; // 0.01 eth
     uint256 public TAX_PERCENT = 5;
-
     mapping(address => uint256) internal _balances;
+
+    event PaidOut(address indexed, uint256, uint256);
 
     receive() external payable {
         // This should be implemented as our generic receive
@@ -40,4 +42,13 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard {
         require(balance >= 0, "Balance can't be negative");
         _balances[account] = balance;
     }
+
+    function payoutWithAppliedTax(address winner, uint256 entryFee) internal {
+        uint256 pot = (entryFee * 2) - (((entryFee * 2) / 100) * TAX_PERCENT);
+        require(address(this).balance >= pot, Errors.NotEnoughMoneyInContract);
+
+        payable(winner).transfer(pot);
+        emit PaidOut(winner, pot, block.timestamp);
+    }
+
 }

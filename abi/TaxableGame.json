@@ -1,5 +1,6 @@
 [
   "event OwnershipTransferred(address indexed,address indexed)",
+  "event PaidOut(address indexed,uint256,uint256)",
   "function MIN_ENTRY_FEE() view returns (uint256)",
   "function TAX_PERCENT() view returns (uint256)",
   "function balanceOf(address) view returns (uint256)",

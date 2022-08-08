@@ -69,7 +69,6 @@ contract PRS is Ownable, TaxableGame {
     event JoinedGameOf(address indexed, address indexed, uint256, uint256, uint256);
     event WonGameAgainst(address indexed, Choices, address indexed, Choices, uint256, uint256);
     event GameDraw(address indexed, Choices, address indexed, Choices, uint256, uint256);
-    event PaidOut(address indexed, uint256, uint256);
 
     function setRevealTimeout(uint32 revealTimeout) public onlyOwner {
         REVEAL_TIMEOUT = revealTimeout;
@@ -185,14 +184,6 @@ contract PRS is Ownable, TaxableGame {
 
         payoutWithAppliedTax(p2, entryFee);
         emit WonGameAgainst(p2, p2Choice, p1, p1Choice, entryFee, block.timestamp);
-    }
-
-    function payoutWithAppliedTax(address winner, uint256 entryFee) public {
-        uint256 pot = (entryFee * 2) - (((entryFee * 2) / 100) * TAX_PERCENT);
-        require(address(this).balance >= pot, Errors.NotEnoughMoneyInContract);
-
-        payable(winner).transfer(pot);
-        emit PaidOut(winner, pot, block.timestamp);
     }
 
     function didTimerRunOut(uint256 timerStart) private view returns (bool) {

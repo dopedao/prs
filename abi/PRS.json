@@ -19,7 +19,6 @@
   "function listGames(address) view returns (tuple(uint256,bytes32,address,uint8,uint256)[])",
   "function makeGame(bytes32) payable",
   "function owner() view returns (address)",
-  "function payoutWithAppliedTax(address,uint256)",
   "function renounceOwnership()",
   "function resolveGameP1(uint256,string)",
   "function resolveGameP2(address,uint256)",
