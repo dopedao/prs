@@ -152,7 +152,7 @@ contract PRS is Ownable, TaxableGame {
         address p1,
         address p2,
         uint256 entryFee
-    ) public {
+    ) private {
         if (p1Choice == p2Choice) {
             payoutWithAppliedTax(p1, entryFee / 2);
             payoutWithAppliedTax(p2, entryFee / 2);
@@ -191,7 +191,7 @@ contract PRS is Ownable, TaxableGame {
     }
 
     function getHashChoice(bytes32 hashChoice, string calldata clearChoice)
-        public
+        private
         pure
         returns (Choices)
     {
