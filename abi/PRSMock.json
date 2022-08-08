@@ -24,5 +24,8 @@
   "function setRevealTimeout(uint32)",
   "function setTaxPercent(uint256)",
   "function transferOwnership(address)",
+  "function unsafeChooseWinner(uint8,uint8,address,address,uint256)",
+  "function unsafeDidTimerRunOut(uint256) view returns (bool)",
+  "function unsafeGetHashChoice(bytes32,string) pure returns (uint8)",
   "function withdraw() payable"
 ]
