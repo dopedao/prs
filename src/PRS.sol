@@ -46,7 +46,7 @@ import { TaxableGame } from "./TaxableGame.sol";
 // @author DOPE DAO
 // @notice This contract is NOT SECURITY AUDITED. Use at your own risk.
 contract PRS is Ownable, TaxableGame {
-    uint32 public REVEAL_TIMEOUT = 2 hours;
+    uint32 public REVEAL_TIMEOUT = 10 minutes;
 
     enum Choices {
         ROCK,
@@ -129,6 +129,7 @@ contract PRS is Ownable, TaxableGame {
         emit JoinedGameOf(msg.sender, p1, gameId, msg.value, block.timestamp);
     }
 
+    // @notice P1 can resolve the game by sending their clear-text move after P2 makes a move
     function resolveGameP1(uint256 gameId, string calldata movePw) public {
         Game memory game = getGame(msg.sender, gameId);
         require(game.p2 != address(0), Errors.NoSecondPlayer);
@@ -138,6 +139,10 @@ contract PRS is Ownable, TaxableGame {
         chooseWinner(p1Choice, game.p2Choice, msg.sender, game.p2, game.entryFee);
     }
 
+    // @notice If P1 does not resolveGame within the alotted time, P2 can take the pot
+    //         by resolving after REVEAL_TIMEOUT has elapsed.
+    //         This prevents P1 from griefing by never revealing their move, essentially
+    //         forcing a deadlock.
     function resolveGameP2(address p1, uint256 gameId) public {
         Game memory game = getGame(p1, gameId);
         require(game.p2 != address(0), Errors.NoSecondPlayer);
