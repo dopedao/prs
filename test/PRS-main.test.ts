@@ -110,7 +110,7 @@ describe('PRS-main', function() {
       const clearChoice = `${choice}-test`;
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
-      await expect(await prs.connect(p1).getHashChoice(hashedChoice, clearChoice)).to.equal(choice);
+      await expect(await prs.connect(p1).getHashChoiceMock(hashedChoice, clearChoice)).to.equal(choice);
     });
 
     it('Should return Paper', async function() {
@@ -120,7 +120,7 @@ describe('PRS-main', function() {
       const clearChoice = `${choice}-test`;
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
-      await expect(await prs.connect(p1).getHashChoice(hashedChoice, clearChoice)).to.equal(choice);
+      await expect(await prs.connect(p1).getHashChoiceMock(hashedChoice, clearChoice)).to.equal(choice);
     });
 
     it('Should return Rock', async function() {
@@ -130,7 +130,7 @@ describe('PRS-main', function() {
       const clearChoice = `${choice}-test`;
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
-      await expect(await prs.connect(p1).getHashChoice(hashedChoice, clearChoice)).to.equal(choice);
+      await expect(await prs.connect(p1).getHashChoiceMock(hashedChoice, clearChoice)).to.equal(choice);
     });
   });
 
@@ -148,7 +148,7 @@ describe('PRS-main', function() {
       });
 
       const p1Bal = await p1.getBalance();
-      await prs.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, entryFee);
+      await prs.connect(p1).chooseWinnerMock(p1Choice, p2Choice, p1.address, p2.address, entryFee);
 
       await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(
         entryFee.mul(2),
@@ -169,7 +169,7 @@ describe('PRS-main', function() {
       });
 
       const p1Bal = await p1.getBalance();
-      await prs.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, entryFee);
+      await prs.connect(p1).chooseWinnerMock(p1Choice, p2Choice, p1.address, p2.address, entryFee);
 
       await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(
         entryFee.mul(2),
@@ -190,7 +190,7 @@ describe('PRS-main', function() {
       });
 
       const p1Bal = await p1.getBalance();
-      await prs.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, entryFee);
+      await prs.connect(p1).chooseWinnerMock(p1Choice, p2Choice, p1.address, p2.address, entryFee);
 
       await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(
         entryFee.mul(2),
@@ -212,7 +212,7 @@ describe('PRS-main', function() {
 
       const p1Bal = await p1.getBalance();
       const p2Bal = await p2.getBalance();
-      await prs.connect(p1).chooseWinner(p1Choice, p2Choice, p1.address, p2.address, entryFee);
+      await prs.connect(p1).chooseWinnerMock(p1Choice, p2Choice, p1.address, p2.address, entryFee);
 
       await expect(await (await p1.getBalance()).sub(p1Bal)).to.approximately(
         entryFee,

@@ -4,15 +4,15 @@ import { CHOICES } from './constants';
 // These are executed as "helpers" instead of "fixtures" because of this error in hardhat.
 // https://github.com/NomicFoundation/hardhat/issues/2980
 export async function deployPrs() {
-  await deployments.fixture(["PRS"]);
-  const prs = await ethers.getContract("PRS");
+  await deployments.fixture(["PRSMock"]);
+  const prs = await ethers.getContract("PRSMock");
   const [p1, p2] = await ethers.getSigners();
   return { prs, p1, p2 };
 }
 
 export async function setupGame(etherAmount: string = '0.1') {
-  await deployments.fixture(["PRS"]);
-  const prs = await ethers.getContract("PRS");
+  await deployments.fixture(["PRSMock"]);
+  const prs = await ethers.getContract("PRSMock");
   const [p1, p2] = await ethers.getSigners();
   
   const gameIndex = 0;
