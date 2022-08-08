@@ -6,7 +6,7 @@ import { PRS } from "../PRS.sol";
 contract PRSMock is PRS {
 
 
-    function chooseWinnerMock(
+    function unsafeChooseWinner(
         Choices p1Choice,
         Choices p2Choice,
         address p1,
@@ -16,11 +16,11 @@ contract PRSMock is PRS {
         return chooseWinner(p1Choice, p2Choice, p1, p2, entryFee);
     }
 
-    function didTimerRunOutMock(uint256 timerStart) public view returns (bool) {
+    function unsafeDidTimerRunOut(uint256 timerStart) public view returns (bool) {
         return didTimerRunOut(timerStart);
     }
 
-    function getHashChoiceMock(bytes32 hashChoice, string calldata clearChoice)
+    function unsafeGetHashChoice(bytes32 hashChoice, string calldata clearChoice)
         public
         pure
         returns (Choices) {
