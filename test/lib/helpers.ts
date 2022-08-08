@@ -10,15 +10,26 @@ export async function deployPrs() {
   return { prs, p1, p2 };
 }
 
-export async function createGame() {
+export async function setupGame(etherAmount: string = '0.1') {
   await deployments.fixture(["PRS"]);
   const prs = await ethers.getContract("PRS");
   const [p1, p2] = await ethers.getSigners();
-
+  
+  const gameIndex = 0;
+  const entryFee = ethers.utils.parseEther(etherAmount);
+  
   const clearChoice = CHOICES.PAPER + '-' + 'test';
   const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
-
-  const entryFee = ethers.utils.parseEther('0.1'); /* 0.1 Eth */
+  
   await prs.connect(p1).makeGame(hashedChoice, { value: entryFee });
-  return { prs, p1, p2, clearChoice, entryFee };
+
+  return { 
+    clearChoice, 
+    entryFee,
+    gameIndex, 
+    hashedChoice,
+    p1, 
+    p2, 
+    prs, 
+  };
 }

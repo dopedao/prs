@@ -1,4 +1,15 @@
 {
-  "extends": ["prettier"],
-  "ignorePatterns": ["**/*.js", "dist", "**/*.d.ts", "**/generated/**"]
+  "extends": [
+    "prettier",
+    "plugin:mocha/recommended"
+  ],
+  "plugins": [
+    "mocha"
+  ],
+  "ignorePatterns": [
+    "**/*.js",
+    "dist",
+    "**/*.d.ts",
+    "**/generated/**"
+  ]
 }

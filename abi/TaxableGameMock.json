@@ -1,0 +1,14 @@
+[
+  "event OwnershipTransferred(address indexed,address indexed)",
+  "function MIN_ENTRY_FEE() view returns (uint256)",
+  "function TAX_PERCENT() view returns (uint256)",
+  "function balanceOf(address) view returns (uint256)",
+  "function getBalance() view returns (uint256)",
+  "function owner() view returns (address)",
+  "function renounceOwnership()",
+  "function setMinEntryFee(uint256)",
+  "function setTaxPercent(uint256)",
+  "function transferOwnership(address)",
+  "function unsafeSetBalance(address,uint256)",
+  "function withdraw() payable"
+]

@@ -5,12 +5,12 @@ import { Contract, Signer } from 'ethers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ethers, network, deployments } from 'hardhat';
 import { ERRORS, CHOICES } from './lib/constants';
-import { deployPrs, createGame } from './lib/helpers';
+import { deployPrs, setupGame } from './lib/helpers';
 import { getRandomNumber } from './lib/utils';
 
-describe('PRS-main', function () {
-  describe('makeGame', function () {
-    it('Should create a game', async function () {
+describe('PRS-main', function() {
+  describe('makeGame', function() {
+    it('Should create a game', async function() {
       const { prs, p1 } = await deployPrs();
 
       const clearChoice = '2-test';
@@ -25,7 +25,7 @@ describe('PRS-main', function () {
       expect(game.entryFee).to.equal(weiAmount);
     });
 
-    it('Should revert on entryFee below minimum', async function () {
+    it('Should revert on entryFee below minimum', async function() {
       const { prs, p1 } = await deployPrs();
 
       const clearChoice = CHOICES.PAPER + '-' + 'test';
@@ -39,9 +39,9 @@ describe('PRS-main', function () {
     });
   });
 
-  describe('joinGame', function () {
-    it('Should let p2 join the game', async function () {
-      const { prs, p1, entryFee } = await createGame();
+  describe('joinGame', function() {
+    it('Should let p2 join the game', async function() {
+      const { prs, p1, entryFee } = await setupGame();
       const [_, p2] = await ethers.getSigners();
       const p2Choice = CHOICES.PAPER;
       const gameIndex = 0;
@@ -54,8 +54,8 @@ describe('PRS-main', function () {
       expect(game.p2Choice).to.equal(p2Choice);
     });
 
-    it('Should revert on too few tokens sent by p2', async function () {
-      const { prs, p1 } = await createGame();
+    it('Should revert on too few tokens sent by p2', async function() {
+      const { prs, p1 } = await setupGame();
       const [_, p2] = await ethers.getSigners();
       const p2Choice = CHOICES.PAPER;
       const gameIndex = 0;
@@ -67,8 +67,8 @@ describe('PRS-main', function () {
       ).to.be.revertedWith(ERRORS.AmountTooLow);
     });
 
-    it('Should revert on index out of bounds p2', async function () {
-      const { prs, p1, entryFee } = await createGame();
+    it('Should revert on index out of bounds p2', async function() {
+      const { prs, p1, entryFee } = await setupGame();
       const [_, p2] = await ethers.getSigners();
       const p2Choice = CHOICES.PAPER;
       const gameIndex = 1;
@@ -78,8 +78,8 @@ describe('PRS-main', function () {
       ).to.be.revertedWith(ERRORS.IndexOutOfBounds);
     });
 
-    it('Should revert on player joining his own game', async function () {
-      const { prs, p1, entryFee } = await createGame();
+    it('Should revert on player joining his own game', async function() {
+      const { prs, p1, entryFee } = await setupGame();
       const p1Choice = CHOICES.PAPER;
       const gameIndex = 0;
 
@@ -88,8 +88,8 @@ describe('PRS-main', function () {
       ).to.be.revertedWith(ERRORS.CannotJoinGame);
     });
 
-    it('Should revert if game already has a second player', async function () {
-      const { prs, p1, entryFee } = await createGame();
+    it('Should revert if game already has a second player', async function() {
+      const { prs, p1, entryFee } = await setupGame();
       const [_, p2, p3] = await ethers.getSigners();
       const p2Choice = CHOICES.PAPER;
       const p3Choice = CHOICES.ROCK;
@@ -102,8 +102,8 @@ describe('PRS-main', function () {
     });
   });
 
-  describe('getHashChoice', function () {
-    it('Should return Scissors', async function () {
+  describe('getHashChoice', function() {
+    it('Should return Scissors', async function() {
       const { prs, p1 } = await deployPrs();
       const choice = CHOICES.SCISSORS;
 
@@ -113,7 +113,7 @@ describe('PRS-main', function () {
       await expect(await prs.connect(p1).getHashChoice(hashedChoice, clearChoice)).to.equal(choice);
     });
 
-    it('Should return Paper', async function () {
+    it('Should return Paper', async function() {
       const { prs, p1 } = await deployPrs();
       const choice = CHOICES.PAPER;
 
@@ -123,7 +123,7 @@ describe('PRS-main', function () {
       await expect(await prs.connect(p1).getHashChoice(hashedChoice, clearChoice)).to.equal(choice);
     });
 
-    it('Should return Rock', async function () {
+    it('Should return Rock', async function() {
       const { prs, p1 } = await deployPrs();
       const choice = CHOICES.ROCK;
 
@@ -134,8 +134,8 @@ describe('PRS-main', function () {
     });
   });
 
-  describe('chooseWinner', function () {
-    it('Should pay p1 when paper and rock', async function () {
+  describe('chooseWinner', function() {
+    it('Should pay p1 when paper and rock', async function() {
       const { prs, p1, p2 } = await deployPrs();
 
       const p1Choice = CHOICES.PAPER;
@@ -156,7 +156,7 @@ describe('PRS-main', function () {
       );
     });
 
-    it('Should pay p1 when rock and scissors', async function () {
+    it('Should pay p1 when rock and scissors', async function() {
       const { prs, p1, p2 } = await deployPrs();
 
       const p1Choice = CHOICES.ROCK;
@@ -177,7 +177,7 @@ describe('PRS-main', function () {
       );
     });
 
-    it('Should pay p1 when scissors and paper', async function () {
+    it('Should pay p1 when scissors and paper', async function() {
       const { prs, p1, p2 } = await deployPrs();
 
       const p1Choice = CHOICES.SCISSORS;
@@ -198,7 +198,7 @@ describe('PRS-main', function () {
       );
     });
 
-    it('Should pay both players when p1==p2', async function () {
+    it('Should pay both players when p1==p2', async function() {
       const { prs, p1, p2 } = await deployPrs();
 
       const p1Choice = CHOICES.PAPER;
@@ -225,8 +225,8 @@ describe('PRS-main', function () {
     });
   });
 
-  describe('payoutWithAppliedTax', function () {
-    it("Should revert if contract doesn't have enough tokens", async function () {
+  describe('payoutWithAppliedTax', function() {
+    it("Should revert if contract doesn't have enough tokens", async function() {
       const { prs, p1 } = await deployPrs();
       const entryFee = ethers.utils.parseEther('1');
 
@@ -235,7 +235,7 @@ describe('PRS-main', function () {
       );
     });
 
-    it('Should apply tax', async function () {
+    it('Should apply tax', async function() {
       const { prs, p1 } = await deployPrs();
 
       const initialEntryFee = ethers.utils.parseEther('0.5');
@@ -255,61 +255,4 @@ describe('PRS-main', function () {
     });
   });
 
-  describe('removeGame', function () {
-    it('Should remove a game and update its position', async function () {
-      const { prs, p1 } = await deployPrs();
-
-      const clearChoice = '2-test';
-      const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
-      const w1 = 0;
-
-      const weiAmount = parseEther('0.1'); /* 0.1 Eth */
-      const weiAmount2 = parseEther('0.2'); /* 0.1 Eth */
-
-      await prs.connect(p1).makeGame(hashedChoice, { value: weiAmount });
-      await prs.connect(p1).makeGame(hashedChoice, { value: weiAmount2 });
-
-      await prs.connect(p1).removeGameP1(p1.address, w1);
-
-      expect(await (await prs.connect(p1).getGame(p1.address, w1)).entryFee).to.equal(weiAmount2);
-    });
-
-    it('Should forfeit if game has p2', async function () {
-      const { prs, p1, p2 } = await deployPrs();
-
-      const clearChoice = '2-test';
-      const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
-      const w1 = 0;
-
-      const weiAmount = parseEther('0.1'); /* 0.1 Eth */
-
-      await prs.connect(p1).makeGame(hashedChoice, { value: weiAmount });
-      await prs.connect(p2).joinGame(p1.address, w1, CHOICES.PAPER, { value: weiAmount });
-      const p2Bal = await p2.getBalance();
-
-      await prs.connect(p1).removeGameP1(p1.address, w1);
-
-      await expect((await p2.getBalance()).sub(p2Bal)).to.be.approximately(
-        parseEther('0.19'),
-        parseEther('0.01'),
-      );
-    });
-
-    it("Should revert if caller isn't the game owner", async function () {
-      const { prs, p1, p2 } = await deployPrs();
-
-      const clearChoice = '2-test';
-      const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
-      const w1 = 0;
-
-      const weiAmount = parseEther('0.1'); /* 0.1 Eth */
-
-      await prs.connect(p1).makeGame(hashedChoice, { value: weiAmount });
-      await prs.connect(p2).joinGame(p1.address, w1, CHOICES.PAPER, { value: weiAmount });
-
-      await expect(prs.connect(p2).removeGameP1(p1.address, w1)).to.be.revertedWith(
-        ERRORS.CannotRemoveGame,
-      );
-    });
-  });
 });

@@ -7,8 +7,12 @@
     {
       "files": "*.sol",
       "options": {
-        "printWidth": 120,
-        "bracketSpacing": true
+        "printWidth": 80,
+        "tabWidth": 4,
+        "useTabs": false,
+        "singleQuote": false,
+        "bracketSpacing": true,
+        "explicitTypes": "preserve"
       }
     }
   ]

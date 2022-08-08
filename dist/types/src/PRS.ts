@@ -57,9 +57,7 @@ export interface PRSInterface extends utils.Interface {
     "MIN_ENTRY_FEE()": FunctionFragment;
     "REVEAL_TIMEOUT()": FunctionFragment;
     "TAX_PERCENT()": FunctionFragment;
-    "changeMinEntryFee(uint256)": FunctionFragment;
-    "changeRevealTimeout(uint32)": FunctionFragment;
-    "changeTaxPercent(uint256)": FunctionFragment;
+    "balanceOf(address)": FunctionFragment;
     "chooseWinner(uint8,uint8,address,address,uint256)": FunctionFragment;
     "getBalance()": FunctionFragment;
     "getGame(address,uint256)": FunctionFragment;
@@ -71,12 +69,14 @@ export interface PRSInterface extends utils.Interface {
     "makeGame(bytes32)": FunctionFragment;
     "owner()": FunctionFragment;
     "payoutWithAppliedTax(address,uint256)": FunctionFragment;
-    "removeGame(address,uint256)": FunctionFragment;
-    "removeGameP1(address,uint256)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "resolveGameP1(uint256,string)": FunctionFragment;
     "resolveGameP2(address,uint256)": FunctionFragment;
+    "setMinEntryFee(uint256)": FunctionFragment;
+    "setRevealTimeout(uint32)": FunctionFragment;
+    "setTaxPercent(uint256)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
+    "withdraw()": FunctionFragment;
   };
 
   getFunction(
@@ -84,9 +84,7 @@ export interface PRSInterface extends utils.Interface {
       | "MIN_ENTRY_FEE"
       | "REVEAL_TIMEOUT"
       | "TAX_PERCENT"
-      | "changeMinEntryFee"
-      | "changeRevealTimeout"
-      | "changeTaxPercent"
+      | "balanceOf"
       | "chooseWinner"
       | "getBalance"
       | "getGame"
@@ -98,12 +96,14 @@ export interface PRSInterface extends utils.Interface {
       | "makeGame"
       | "owner"
       | "payoutWithAppliedTax"
-      | "removeGame"
-      | "removeGameP1"
       | "renounceOwnership"
       | "resolveGameP1"
       | "resolveGameP2"
+      | "setMinEntryFee"
+      | "setRevealTimeout"
+      | "setTaxPercent"
       | "transferOwnership"
+      | "withdraw"
   ): FunctionFragment;
 
   encodeFunctionData(
@@ -119,16 +119,8 @@ export interface PRSInterface extends utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "changeMinEntryFee",
-    values: [PromiseOrValue<BigNumberish>]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "changeRevealTimeout",
-    values: [PromiseOrValue<BigNumberish>]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "changeTaxPercent",
-    values: [PromiseOrValue<BigNumberish>]
+    functionFragment: "balanceOf",
+    values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
     functionFragment: "chooseWinner",
@@ -182,14 +174,6 @@ export interface PRSInterface extends utils.Interface {
     values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: "removeGame",
-    values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "removeGameP1",
-    values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
-  ): string;
-  encodeFunctionData(
     functionFragment: "renounceOwnership",
     values?: undefined
   ): string;
@@ -202,9 +186,22 @@ export interface PRSInterface extends utils.Interface {
     values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
+    functionFragment: "setMinEntryFee",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setRevealTimeout",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setTaxPercent",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [PromiseOrValue<string>]
   ): string;
+  encodeFunctionData(functionFragment: "withdraw", values?: undefined): string;
 
   decodeFunctionResult(
     functionFragment: "MIN_ENTRY_FEE",
@@ -218,18 +215,7 @@ export interface PRSInterface extends utils.Interface {
     functionFragment: "TAX_PERCENT",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "changeMinEntryFee",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "changeRevealTimeout",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "changeTaxPercent",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "chooseWinner",
     data: BytesLike
@@ -256,11 +242,6 @@ export interface PRSInterface extends utils.Interface {
     functionFragment: "payoutWithAppliedTax",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "removeGame", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "removeGameP1",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
@@ -274,9 +255,22 @@ export interface PRSInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "setMinEntryFee",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setRevealTimeout",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setTaxPercent",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
   events: {
     "CreatedGame(address,uint256,uint256)": EventFragment;
@@ -284,7 +278,6 @@ export interface PRSInterface extends utils.Interface {
     "JoinedGameOf(address,address,uint256,uint256,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
     "PaidOut(address,uint256,uint256)": EventFragment;
-    "RemovedGame(address,uint256,uint256)": EventFragment;
     "WonGameAgainst(address,uint8,address,uint8,uint256,uint256)": EventFragment;
   };
 
@@ -293,7 +286,6 @@ export interface PRSInterface extends utils.Interface {
   getEvent(nameOrSignatureOrTopic: "JoinedGameOf"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "PaidOut"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "RemovedGame"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "WonGameAgainst"): EventFragment;
 }
 
@@ -362,18 +354,6 @@ export type PaidOutEvent = TypedEvent<
 
 export type PaidOutEventFilter = TypedEventFilter<PaidOutEvent>;
 
-export interface RemovedGameEventObject {
-  arg0: string;
-  arg1: BigNumber;
-  arg2: BigNumber;
-}
-export type RemovedGameEvent = TypedEvent<
-  [string, BigNumber, BigNumber],
-  RemovedGameEventObject
->;
-
-export type RemovedGameEventFilter = TypedEventFilter<RemovedGameEvent>;
-
 export interface WonGameAgainstEventObject {
   arg0: string;
   arg1: number;
@@ -422,20 +402,10 @@ export interface PRS extends BaseContract {
 
     TAX_PERCENT(overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    changeMinEntryFee(
-      mintEntryFee: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
-
-    changeRevealTimeout(
-      revealTimeout: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
-
-    changeTaxPercent(
-      taxPercent: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
+    balanceOf(
+      account: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
 
     chooseWinner(
       p1Choice: PromiseOrValue<BigNumberish>,
@@ -497,18 +467,6 @@ export interface PRS extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    removeGame(
-      p1: PromiseOrValue<string>,
-      gameId: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
-
-    removeGameP1(
-      p1: PromiseOrValue<string>,
-      gameId: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
-
     renounceOwnership(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
@@ -525,9 +483,28 @@ export interface PRS extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    setMinEntryFee(
+      minEntryFee: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    setRevealTimeout(
+      revealTimeout: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    setTaxPercent(
+      taxPercent: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     transferOwnership(
       newOwner: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    withdraw(
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
   };
 
@@ -537,20 +514,10 @@ export interface PRS extends BaseContract {
 
   TAX_PERCENT(overrides?: CallOverrides): Promise<BigNumber>;
 
-  changeMinEntryFee(
-    mintEntryFee: PromiseOrValue<BigNumberish>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
-  changeRevealTimeout(
-    revealTimeout: PromiseOrValue<BigNumberish>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
-  changeTaxPercent(
-    taxPercent: PromiseOrValue<BigNumberish>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
+  balanceOf(
+    account: PromiseOrValue<string>,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
 
   chooseWinner(
     p1Choice: PromiseOrValue<BigNumberish>,
@@ -612,18 +579,6 @@ export interface PRS extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  removeGame(
-    p1: PromiseOrValue<string>,
-    gameId: PromiseOrValue<BigNumberish>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
-  removeGameP1(
-    p1: PromiseOrValue<string>,
-    gameId: PromiseOrValue<BigNumberish>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
   renounceOwnership(
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
@@ -640,9 +595,28 @@ export interface PRS extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  setMinEntryFee(
+    minEntryFee: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  setRevealTimeout(
+    revealTimeout: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  setTaxPercent(
+    taxPercent: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   transferOwnership(
     newOwner: PromiseOrValue<string>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  withdraw(
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
@@ -652,20 +626,10 @@ export interface PRS extends BaseContract {
 
     TAX_PERCENT(overrides?: CallOverrides): Promise<BigNumber>;
 
-    changeMinEntryFee(
-      mintEntryFee: PromiseOrValue<BigNumberish>,
+    balanceOf(
+      account: PromiseOrValue<string>,
       overrides?: CallOverrides
-    ): Promise<void>;
-
-    changeRevealTimeout(
-      revealTimeout: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    changeTaxPercent(
-      taxPercent: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    ): Promise<BigNumber>;
 
     chooseWinner(
       p1Choice: PromiseOrValue<BigNumberish>,
@@ -727,18 +691,6 @@ export interface PRS extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    removeGame(
-      p1: PromiseOrValue<string>,
-      gameId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    removeGameP1(
-      p1: PromiseOrValue<string>,
-      gameId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
     resolveGameP1(
@@ -753,10 +705,27 @@ export interface PRS extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    setMinEntryFee(
+      minEntryFee: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setRevealTimeout(
+      revealTimeout: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setTaxPercent(
+      taxPercent: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     transferOwnership(
       newOwner: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    withdraw(overrides?: CallOverrides): Promise<void>;
   };
 
   filters: {
@@ -823,17 +792,6 @@ export interface PRS extends BaseContract {
       arg2?: null
     ): PaidOutEventFilter;
 
-    "RemovedGame(address,uint256,uint256)"(
-      arg0?: PromiseOrValue<string> | null,
-      arg1?: null,
-      arg2?: null
-    ): RemovedGameEventFilter;
-    RemovedGame(
-      arg0?: PromiseOrValue<string> | null,
-      arg1?: null,
-      arg2?: null
-    ): RemovedGameEventFilter;
-
     "WonGameAgainst(address,uint8,address,uint8,uint256,uint256)"(
       arg0?: PromiseOrValue<string> | null,
       arg1?: null,
@@ -859,19 +817,9 @@ export interface PRS extends BaseContract {
 
     TAX_PERCENT(overrides?: CallOverrides): Promise<BigNumber>;
 
-    changeMinEntryFee(
-      mintEntryFee: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
-
-    changeRevealTimeout(
-      revealTimeout: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
-
-    changeTaxPercent(
-      taxPercent: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    balanceOf(
+      account: PromiseOrValue<string>,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     chooseWinner(
@@ -934,18 +882,6 @@ export interface PRS extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    removeGame(
-      p1: PromiseOrValue<string>,
-      gameId: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
-
-    removeGameP1(
-      p1: PromiseOrValue<string>,
-      gameId: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
-
     renounceOwnership(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
@@ -962,9 +898,28 @@ export interface PRS extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    setMinEntryFee(
+      minEntryFee: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    setRevealTimeout(
+      revealTimeout: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    setTaxPercent(
+      taxPercent: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     transferOwnership(
       newOwner: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    withdraw(
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
   };
 
@@ -975,19 +930,9 @@ export interface PRS extends BaseContract {
 
     TAX_PERCENT(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    changeMinEntryFee(
-      mintEntryFee: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
-    changeRevealTimeout(
-      revealTimeout: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
-    changeTaxPercent(
-      taxPercent: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    balanceOf(
+      account: PromiseOrValue<string>,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     chooseWinner(
@@ -1050,18 +995,6 @@ export interface PRS extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    removeGame(
-      p1: PromiseOrValue<string>,
-      gameId: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
-    removeGameP1(
-      p1: PromiseOrValue<string>,
-      gameId: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
     renounceOwnership(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
@@ -1078,9 +1011,28 @@ export interface PRS extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
+    setMinEntryFee(
+      minEntryFee: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setRevealTimeout(
+      revealTimeout: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setTaxPercent(
+      taxPercent: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
     transferOwnership(
       newOwner: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    withdraw(
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
   };
 }

@@ -1,17 +1,12 @@
-import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
-import { parseEther } from 'ethers/lib/utils';
-import { Contract, Signer } from 'ethers';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ethers, network, deployments } from 'hardhat';
 import { ERRORS, CHOICES } from './lib/constants';
-import { deployPrs, createGame } from './lib/helpers';
-import { getRandomNumber } from './lib/utils';
+import { deployPrs, setupGame } from './lib/helpers';
 
-describe('PRS-payouts', function () {
+describe('PRS-payouts', function() {
 
-  describe('payoutWithAppliedTax', function () {
-    it("Should revert if contract doesn't have enough tokens", async function () {
+  describe('payoutWithAppliedTax', function() {
+    it("Should revert if contract doesn't have enough tokens", async function() {
       const { prs, p1 } = await deployPrs();
       const entryFee = ethers.utils.parseEther('1');
 
@@ -20,7 +15,7 @@ describe('PRS-payouts', function () {
       );
     });
 
-    it('Should apply tax', async function () {
+    it('Should apply tax', async function() {
       const { prs, p1, p2 } = await deployPrs();
 
       const initialEntryFee = ethers.utils.parseEther('0.5');
