@@ -66,51 +66,23 @@ contract PRS is Ownable, TaxableGame {
     mapping(address => Game[]) Games;
 
     event CreatedGame(address indexed, uint256, uint256);
-    event JoinedGameOf(
-        address indexed,
-        address indexed,
-        uint256,
-        uint256,
-        uint256
-    );
-    event WonGameAgainst(
-        address indexed,
-        Choices,
-        address indexed,
-        Choices,
-        uint256,
-        uint256
-    );
-    event GameDraw(
-        address indexed,
-        Choices,
-        address indexed,
-        Choices,
-        uint256,
-        uint256
-    );
+    event JoinedGameOf(address indexed, address indexed, uint256, uint256, uint256);
+    event WonGameAgainst(address indexed, Choices, address indexed, Choices, uint256, uint256);
+    event GameDraw(address indexed, Choices, address indexed, Choices, uint256, uint256);
     event PaidOut(address indexed, uint256, uint256);
 
     function setRevealTimeout(uint32 revealTimeout) public onlyOwner {
         REVEAL_TIMEOUT = revealTimeout;
     }
 
-    function getTimeLeft(address player, uint256 gameId)
-        public
-        view
-        returns (uint256)
-    {
+    function getTimeLeft(address player, uint256 gameId) public view returns (uint256) {
         Game memory game = getGame(player, gameId);
         require(!didTimerRunOut(game.timerStart), Errors.TimerFinished);
         require(game.p2 != address(0), Errors.NoActiveTimer);
         return REVEAL_TIMEOUT - (block.timestamp - game.timerStart);
     }
 
-    function getGame(address player, uint256 gameId)
-        public
-        view
-        returns (Game memory)
-    {
+    function getGame(address player, uint256 gameId) public view returns (Game memory) {
         Game[] storage games = Games[player];
         require(games.length > gameId, Errors.IndexOutOfBounds);
 
@@ -121,11 +93,7 @@ contract PRS is Ownable, TaxableGame {
         return Games[player];
     }
 
-    function getGameEntryFee(address player, uint256 gameId)
-        public
-        view
-        returns (uint256)
-    {
+    function getGameEntryFee(address player, uint256 gameId) public view returns (uint256) {
         Game memory game = getGame(player, gameId);
         return game.entryFee;
     }
@@ -168,13 +136,7 @@ contract PRS is Ownable, TaxableGame {
 
         Choices p1Choice = getHashChoice(game.p1SaltedChoice, movePw);
 
-        chooseWinner(
-            p1Choice,
-            game.p2Choice,
-            msg.sender,
-            game.p2,
-            game.entryFee
-        );
+        chooseWinner(p1Choice, game.p2Choice, msg.sender, game.p2, game.entryFee);
     }
 
     function resolveGameP2(address p1, uint256 gameId) public {
@@ -195,14 +157,7 @@ contract PRS is Ownable, TaxableGame {
         if (p1Choice == p2Choice) {
             payoutWithAppliedTax(p1, entryFee / 2);
             payoutWithAppliedTax(p2, entryFee / 2);
-            emit GameDraw(
-                p1,
-                p1Choice,
-                p2,
-                p2Choice,
-                entryFee,
-                block.timestamp
-            );
+            emit GameDraw(p1, p1Choice, p2, p2Choice, entryFee, block.timestamp);
             return;
         }
 
@@ -212,52 +167,24 @@ contract PRS is Ownable, TaxableGame {
             (p1Choice == Choices.SCISSORS && p2Choice == Choices.PAPER)
         ) {
             payoutWithAppliedTax(p1, entryFee);
-            emit WonGameAgainst(
-                p1,
-                p1Choice,
-                p2,
-                p2Choice,
-                entryFee,
-                block.timestamp
-            );
+            emit WonGameAgainst(p1, p1Choice, p2, p2Choice, entryFee, block.timestamp);
             return;
         }
 
         if (p1Choice == Choices.FORFEIT) {
             payoutWithAppliedTax(p2, entryFee);
-            emit WonGameAgainst(
-                p2,
-                p2Choice,
-                p1,
-                p1Choice,
-                entryFee,
-                block.timestamp
-            );
+            emit WonGameAgainst(p2, p2Choice, p1, p1Choice, entryFee, block.timestamp);
             return;
         }
 
         if (p2Choice == Choices.FORFEIT) {
             payoutWithAppliedTax(p1, entryFee);
-            emit WonGameAgainst(
-                p1,
-                p1Choice,
-                p2,
-                p2Choice,
-                entryFee,
-                block.timestamp
-            );
+            emit WonGameAgainst(p1, p1Choice, p2, p2Choice, entryFee, block.timestamp);
             return;
         }
 
         payoutWithAppliedTax(p2, entryFee);
-        emit WonGameAgainst(
-            p2,
-            p2Choice,
-            p1,
-            p1Choice,
-            entryFee,
-            block.timestamp
-        );
+        emit WonGameAgainst(p2, p2Choice, p1, p1Choice, entryFee, block.timestamp);
     }
 
     function payoutWithAppliedTax(address winner, uint256 entryFee) public {

@@ -15,6 +15,7 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard {
         // This should be implemented as our generic receive
         // TODO add balances in memory
     }
+
     function withdraw() public payable onlyOwner {
         payable(msg.sender).transfer(address(this).balance);
     }
