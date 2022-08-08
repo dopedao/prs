@@ -65,7 +65,10 @@ describe('TaxableGame', function () {
       const newOwnerBalance = await this.contractOwner.getBalance();
       
       expect(newOwnerBalance).
-        to.be.approximately(oldOwnerBalance.add(moneyToBurn), parseEther('0.0001'));
+        to.be.approximately(
+          oldOwnerBalance.add(moneyToBurn), 
+          parseEther('0.0001')
+        );
 
       expect(await this.tgm.getBalance()).to.eq(ethers.BigNumber.from(0));
     });

@@ -79,7 +79,11 @@ describe('PRS-concurrency', function() {
       // console.log('p2after', formatEther(balances.p2.after));
       // console.log('p1after', formatEther(balances.p1.after));
       // console.log('contract balance', formatEther(await prs.getBalance()));
-      expect(balances.p2.after).to.be.approximately(expectedP2Balance, parseEther('0.001'));
+      expect(balances.p2.after).
+        to.be.approximately(
+          expectedP2Balance, 
+          parseEther('0.001')
+        );
     });
   });
 });

@@ -46,7 +46,7 @@ import { TaxableGame } from "./TaxableGame.sol";
 // @author DOPE DAO
 // @notice This contract is NOT SECURITY AUDITED. Use at your own risk.
 contract PRS is Ownable, TaxableGame {
-    uint32 public REVEAL_TIMEOUT = 48 hours;
+    uint32 public REVEAL_TIMEOUT = 2 hours;
 
     enum Choices {
         ROCK,

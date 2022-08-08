@@ -77,7 +77,7 @@ describe('PRS-resolution', function() {
       const idx = await prs.connect(p1).getGame(p1.address, gameIndex);
     });
 
-    it('Should resolve game with proper winner when p2 calls resolveGame', async function() {
+    it('Resolves game in favor of p2 if p1 does not reveal no matter the outcome', async function() {
       // Non-standard game setup with 5 eth
       const newEntryFee = '5';
       const { entryFee, gameIndex, p1, p2, prs } = await setupGame(newEntryFee);
@@ -88,33 +88,25 @@ describe('PRS-resolution', function() {
       const p2Choice = CHOICES.ROCK;
       await prs.connect(p2).joinGame(p1.address, gameIndex, p2Choice, { value: entryFee });
 
+      // P1 does not reveal their move within alotted time
       const revealTimeout = await prs.REVEAL_TIMEOUT();
       await network.provider.send('evm_increaseTime', [revealTimeout]);
       await network.provider.send('evm_mine');
 
-
-      // Make sure P2 is a loser by checking balance after the fact
+      // P2 still claims victory so P1 can't grief
       await prs.connect(p2).resolveGameP2(p1.address, gameIndex);
 
       const p2EndBal = await p2.getBalance();
-
-      const expectedP2Bal = p2StartBal.sub(parseEther(newEntryFee));
-      console.log(
-        'start',
-        formatEther(p2StartBal.toString())
-      );
-      console.log(
-        'end',
-        formatEther(p2EndBal.toString())
-      );
-      console.log(
-        'expected',
-        formatEther(expectedP2Bal.toString())
-      );
+      const bigIntNewEntryFee = parseEther(newEntryFee);
+      const TAX = await prs.TAX_PERCENT();
+      const totalTax = bigIntNewEntryFee.mul(2).div(100).mul(TAX);
+      const expectedP2Bal = p2StartBal.
+        add(bigIntNewEntryFee).
+        sub(totalTax);
 
       await expect(p2EndBal).to.be.approximately(
         expectedP2Bal,
-        parseEther('0.00001'),
+        parseEther('0.001'),
       );
     });
 

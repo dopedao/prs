@@ -12,7 +12,7 @@
     "dev": "hardhat --network localhost deploy --watch",
     "test:gas": "hardhat test",
     "test:watch": "hardhat watch test",
-    "test": "hardhat test --parallel",
+    "test": "hardhat test",
     "typechain": "hardhat typechain"
   },
   "devDependencies": {
