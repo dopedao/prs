@@ -152,7 +152,7 @@ contract PRS is Ownable, TaxableGame {
         address p1,
         address p2,
         uint256 entryFee
-    ) public {
+    ) internal {
         if (p1Choice == p2Choice) {
             payoutWithAppliedTax(p1, entryFee / 2);
             payoutWithAppliedTax(p2, entryFee / 2);
@@ -186,12 +186,12 @@ contract PRS is Ownable, TaxableGame {
         emit WonGameAgainst(p2, p2Choice, p1, p1Choice, entryFee, block.timestamp);
     }
 
-    function didTimerRunOut(uint256 timerStart) private view returns (bool) {
+    function didTimerRunOut(uint256 timerStart) internal view returns (bool) {
         return block.timestamp > timerStart + REVEAL_TIMEOUT;
     }
 
     function getHashChoice(bytes32 hashChoice, string calldata clearChoice)
-        public
+        internal
         pure
         returns (Choices)
     {

@@ -1,15 +1,19 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { parseEther, formatEther } from 'ethers/lib/utils';
-import { ethers, network, deployments } from 'hardhat';
-import { ERRORS, CHOICES } from './lib/constants';
-import { deployPrs, setupGame } from './lib/helpers';
+import { parseEther } from 'ethers/lib/utils';
+import { ethers } from 'hardhat';
+import { CHOICES } from './lib/constants';
 import { getRandomNumber } from './lib/utils';
 
 describe('PRS-concurrency', function() {
   describe('Concurrency Tests', function() {
+    beforeEach(async function () {
+        [this.p1, this.p2] = await ethers.getSigners();
+        const PRSMock = await ethers.getContractFactory('PRSMock');
+        this.prsMock = await PRSMock.deploy();
+    });
+
     it('Should allow multiple games', async function() {
-      const { prs, p1, p2 } = await deployPrs();
       const numGames = getRandomNumber(2, 7);
       const entryFee = 1;
       const entryFeeEth = ethers.utils.parseEther(entryFee.toString());
@@ -18,11 +22,11 @@ describe('PRS-concurrency', function() {
 
       const balances = {
         p1: {
-          before: await p1.getBalance(),
+          before: await this.p1.getBalance(),
           after: BigNumber.from(0),
         },
         p2: {
-          before: await p2.getBalance(),
+          before: await this.p2.getBalance(),
           after: BigNumber.from(0),
         },
       };
@@ -34,16 +38,16 @@ describe('PRS-concurrency', function() {
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
       for (let i = 0; i < numGames; i++) {
-        await prs.connect(p1).makeGame(hashedChoice, { value: entryFeeEth });
+        await this.prsMock.connect(this.p1).makeGame(hashedChoice, { value: entryFeeEth });
       }
 
       for (let i = 0; i < numGames; i++) {
-        await prs.connect(p2).joinGame(p1.address, i, p2Choice, { value: entryFeeEth });
+        await this.prsMock.connect(this.p2).joinGame(this.p1.address, i, p2Choice, { value: entryFeeEth });
         p2GasUsed = p2GasUsed.add(approximateGasFee);
       }
 
       const expectedContractBalance = (numGames * entryFee * 2).toString();
-      const actualContractBalance = await prs.getBalance();
+      const actualContractBalance = await this.prsMock.getBalance();
       expect(actualContractBalance).to.be.approximately(
         parseEther(expectedContractBalance),
         parseEther('0.0001'),
@@ -51,20 +55,20 @@ describe('PRS-concurrency', function() {
 
       // p2 wins every time
       for (let i = 0; i < numGames; i++) {
-        expect(await prs.connect(p1).resolveGameP1(gameIndex, clearChoice)).to.not.reverted;
+        expect(await this.prsMock.connect(this.p1).resolveGameP1(gameIndex, clearChoice)).to.not.reverted;
       }
 
       const amountSpent = entryFeeEth.mul(numGames);
 
-      balances.p1.after = await p1.getBalance();
-      balances.p2.after = await p2.getBalance();
+      balances.p1.after = await this.p1.getBalance();
+      balances.p2.after = await this.p2.getBalance();
 
       expect(balances.p1.after).to.be.approximately(
         balances.p1.before.sub(amountSpent),
         parseEther('0.01'),
       );
 
-      const TAX = await prs.TAX_PERCENT();
+      const TAX = await this.prsMock.TAX_PERCENT();
       const totalTax = entryFeeEth.mul(2).div(100).mul(TAX).mul(numGames);
       const payout = entryFeeEth
         .mul(numGames)
