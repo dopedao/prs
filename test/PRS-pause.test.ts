@@ -15,7 +15,7 @@ describe('PRS-pause', function () {
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
       await p1.sendTransaction({ to: prsMock.address, value: entryFee });
-      await prsMock.connect(p1).pauseContract();
+      await prsMock.connect(p1).pauseGame();
 
       await expect(prsMock.connect(p1).startGame(hashedChoice, entryFee)).to.revertedWith(
         pauseRevertMessage,
@@ -29,7 +29,7 @@ describe('PRS-pause', function () {
 
       const p2Choice = CHOICES.PAPER;
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2Choice, entryFee);
-      await prsMock.connect(p1).pauseContract();
+      await prsMock.connect(p1).pauseGame();
 
       await expect(prsMock.connect(p1).resolveGameP1(gameIndex, clearChoice)).to.revertedWith(
         pauseRevertMessage,
@@ -42,7 +42,7 @@ describe('PRS-pause', function () {
 
       const p2Choice = CHOICES.PAPER;
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2Choice, entryFee);
-      await prsMock.connect(p1).pauseContract();
+      await prsMock.connect(p1).pauseGame();
 
       await expect(prsMock.connect(p2).resolveGameP2(p1.address, gameIndex)).to.revertedWith(
         pauseRevertMessage,
@@ -53,7 +53,7 @@ describe('PRS-pause', function () {
   describe('joinGame', async function () {
     it("Shouldn't let p2 join a game when contract is paused", async function () {
       const { clearChoice, entryFee, gameIndex, hashedChoice, p1, p2, prsMock } = await setupGame();
-      await prsMock.connect(p1).pauseContract();
+      await prsMock.connect(p1).pauseGame();
 
       await expect(
         prsMock.connect(p2).joinGame(p1.address, hashedChoice, gameIndex, entryFee),
@@ -65,11 +65,21 @@ describe('PRS-pause', function () {
     it('Should unpause the contract after a pause', async function () {
       const { clearChoice, entryFee, gameIndex, hashedChoice, p1, p2, prsMock } = await setupGame();
 
-      await prsMock.connect(p1).pauseContract();
-      await expect(await prsMock.connect(p1).contractState()).to.equal(true);
+      await prsMock.connect(p1).pauseGame();
+      await expect(await prsMock.connect(p1).paused()).to.equal(true);
 
-      await prsMock.connect(p1).unpauseContract();
-      await expect(await prsMock.connect(p1).contractState()).to.equal(false);
+      await prsMock.connect(p1).unpauseGame();
+      await expect(await prsMock.connect(p1).paused()).to.equal(false);
     });
   });
+
+    describe('withdraw', async function () {
+        it('Should not allow withdrawing when contract is paused', async function () {
+            const { clearChoice, entryFee, gameIndex, hashedChoice, p1, p2, prsMock } = await setupGame();
+            await prsMock.connect(p1).pauseGame();
+
+            await expect(prsMock.connect(p2).withdraw()).to.revertedWith(pauseRevertMessage);
+        })
+    })
+
 });
