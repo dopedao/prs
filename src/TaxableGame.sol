@@ -21,12 +21,12 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     // @notice Check to determine if this address has enough balance to participate
     modifier checkAddressHasSufficientBalance(uint256 entryFee) {
         uint256 balance = balanceOf(msg.sender);
-        require(balance >= entryFee, Errors.PlayerBalanceNotEnough);
+        if (balance < entryFee) revert Errors.PlayerBalanceNotEnough(balance, entryFee);
         _;
     }
 
     modifier checkEntryFeeEnough(uint256 entryFee) {
-        require(entryFee >= minEntryFee, Errors.AmountTooLow);
+        if (entryFee < minEntryFee) revert Errors.AmountTooLow(entryFee, minEntryFee);
         _;
     }
 
@@ -42,7 +42,7 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     // @notice Players can withdraw their balance from the contract
     function withdraw() public payable whenNotPaused {
         uint256 balance = balanceOf(msg.sender);
-        require(address(this).balance >= balance, Errors.NotEnoughMoneyInContract);
+        if (address(this).balance < balance) revert Errors.NotEnoughMoneyInContract(address(this).balance, balance);
         _setBalance(msg.sender, 0);
         payable(msg.sender).transfer(balance);
     }
@@ -50,7 +50,7 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     // @notice Withdraws tax from games played to contract owner
     function withdrawTax() public payable onlyOwner {
         uint256 balance = balanceOf(address(this));
-        require(address(this).balance >= balance, Errors.NotEnoughMoneyInContract);
+        if (address(this).balance < balance) revert Errors.NotEnoughMoneyInContract(address(this).balance, balance);
         _setBalance(address(this), 0);
         payable(msg.sender).transfer(balance);
     }
@@ -96,7 +96,7 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     }
 
     function _setBalance(address account, uint256 balance) internal {
-        require(balance >= 0, "Balance can't be negative");
+        if (balance < 0) revert Errors.InvalidBalance(balance);
         _balances[account] = balance;
     }
 
