@@ -1,14 +1,14 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
 import { TaxableGame } from "../TaxableGame.sol";
 
 contract TaxableGameMock is TaxableGame {
     function unsafeSetBalance(address account, uint256 balance) public onlyOwner {
-        setBalance(account, balance);
+        _setBalance(account, balance);
     }
 
-    function unsafePayoutWithAppliedTax(address winner, uint256 entryFee) public onlyOwner {
-        payoutWithAppliedTax(winner, entryFee);
+    function unsafePayout(address winner, uint256 entryFee) public onlyOwner {
+        _payout(winner, entryFee);
     }
 }

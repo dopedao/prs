@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { BigNumber } from 'ethers';
 import { formatEther, parseEther } from 'ethers/lib/utils';
 import { ethers, network, deployments } from 'hardhat';
 import { ERRORS, CHOICES } from './lib/constants';
@@ -10,14 +11,14 @@ describe('TaxableGame', function () {
     this.tg = await TaxableGameMock.deploy();
   });
 
-  describe('MIN_ENTRY_FEE', function () {
+  describe('minEntryFee', function () {
     it('sets as owner', async function () {
       const newMinEntry = parseEther('0.4444');
-      const defaultMinEntry = await this.tg.MIN_ENTRY_FEE(); // Should be 0.01 eth
+      const defaultMinEntry = await this.tg.minEntryFee(); // Should be 0.01 eth
       expect(defaultMinEntry).to.not.equal(newMinEntry);
 
       await this.tg.setMinEntryFee(newMinEntry);
-      const updatedMinEntry = await this.tg.MIN_ENTRY_FEE();
+      const updatedMinEntry = await this.tg.minEntryFee();
       expect(updatedMinEntry).to.equal(newMinEntry);
     });
 
@@ -27,14 +28,14 @@ describe('TaxableGame', function () {
     });
   });
 
-  describe('TAX_PERCENT', function () {
+  describe('taxPercent', function () {
     it('sets as owner', async function () {
       const newTax = parseEther('99');
-      const defaultTax = await this.tg.TAX_PERCENT(); // 5
+      const defaultTax = await this.tg.taxPercent(); // 5
       expect(defaultTax).to.not.equal(newTax);
 
       await this.tg.setTaxPercent(newTax);
-      const updatedTax = await this.tg.TAX_PERCENT();
+      const updatedTax = await this.tg.taxPercent();
       expect(updatedTax).to.equal(newTax);
     });
     it('prevents anyone else', async function () {
@@ -54,23 +55,30 @@ describe('TaxableGame', function () {
       expect(balance).to.equal(expectedContractBalance);
     });
 
-    it('allows contract owner to withdraw overages', async function () {
+    it('allows contract owner to withdraw balance for contract itself', async function () {
       const oldOwnerBalance = await this.contractOwner.getBalance();
-      const moneyToBurn = parseEther('69');
-      await this.clumsyNoob.sendTransaction({
+
+      const fakeTaxMoney = parseEther('69');
+      await this.contractOwner.sendTransaction({
         to: this.tg.address,
-        value: moneyToBurn,
+        value: fakeTaxMoney,
       });
-      await this.tg.withdraw();
+
+      // Fake setting balance for contract
+      await this.tg.unsafeSetBalance(this.tg.address, BigNumber.from(0));
+      await this.tg.unsafeSetBalance(this.tg.address, fakeTaxMoney);
+
+      await this.tg.withdrawTax();
       const newOwnerBalance = await this.contractOwner.getBalance();
       
       expect(newOwnerBalance).
         to.be.approximately(
-          oldOwnerBalance.add(moneyToBurn), 
-          parseEther('0.0001')
+          oldOwnerBalance, 
+          // Calling unsafeSetBalance and withdrawTax takes some gas
+          parseEther('0.001')
         );
 
-      expect(await this.tg.getBalance()).to.eq(ethers.BigNumber.from(0));
+      expect(await this.tg.balanceOf(this.tg.address)).to.eq(ethers.BigNumber.from(0));
     });
 
     it('should get balanceOf(player)', async function () {
@@ -82,42 +90,23 @@ describe('TaxableGame', function () {
 
   });
   
-  describe('payoutWithAppliedTax', function() {
-    it("Should revert if contract doesn't have enough tokens", async function() {
-      const [p1, p2] = await ethers.getSigners();
-      const entryFee = ethers.utils.parseEther('1');
-
-      await expect(
-        this.tg.unsafePayoutWithAppliedTax(p1.address, entryFee)
-      ).to.be.revertedWith(
-        ERRORS.NotEnoughMoneyInContract,
-      );
-    });
-
-    it('Should apply tax', async function() {
-      const [p1, p2] = await ethers.getSigners();
+  describe('payout', function() {
+    it('Should apply tax to payout', async function() {
+      const [p1] = await ethers.getSigners();
 
       const initialEntryFee = ethers.utils.parseEther('0.5');
-      const TAX = await this.tg.TAX_PERCENT();
+      const TAX_PCT = await this.tg.taxPercent();
 
-      const payout = initialEntryFee.mul(2).sub(initialEntryFee.mul(2).div(100).mul(TAX));
-      const expectedBal = initialEntryFee.mul(2).sub(payout);
+      const taxAmount = initialEntryFee.div(100).mul(TAX_PCT);
+      const payout = initialEntryFee.sub(taxAmount);
 
-      await p1.sendTransaction({
-        to: this.tg.address,
-        value: initialEntryFee.mul(2),
-      });
+      // This is unsafe because we won't have enough to actually pay
+      // the contract balance out in real tokens.
+      await this.tg.unsafePayout(p1.address, initialEntryFee);
 
-      await this.tg.unsafePayoutWithAppliedTax(p2.address, initialEntryFee);
-
-      await expect(await this.tg.getBalance()).to.equal(expectedBal);
+      await expect(await this.tg.balanceOf(this.tg.address)).to.equal(taxAmount);
+      await expect(await this.tg.balanceOf(p1.address)).to.equal(payout);
     });
-
-    it('Should prevent the LOSER from getting paid');
-    it('Should prevent random people from paying themselves');
-    it('Should not let people drain the contract');
   });
-
-
 
 });

@@ -46,7 +46,9 @@ import { TaxableGame } from "./TaxableGame.sol";
 // @author DOPE DAO
 // @notice This contract is NOT SECURITY AUDITED. Use at your own risk.
 contract PRS is Ownable, TaxableGame {
-    uint32 public REVEAL_TIMEOUT = 10 minutes;
+    // @notice Player 1 has to reveal their move by this time after Player 2 reveals theirs,
+    //         or Player 2 can reveal and take the pot.
+    uint256 public revealTimeout = 12 hours;
 
     enum Choices {
         ROCK,
@@ -56,10 +58,10 @@ contract PRS is Ownable, TaxableGame {
     }
 
     struct Game {
-        uint256 entryFee;
         bytes32 p1SaltedChoice;
         address p2;
         Choices p2Choice;
+        uint256 entryFee;
         uint256 timerStart;
     }
 
@@ -70,17 +72,12 @@ contract PRS is Ownable, TaxableGame {
     event WonGameAgainst(address indexed, Choices, address indexed, Choices, uint256, uint256);
     event GameDraw(address indexed, Choices, address indexed, Choices, uint256, uint256);
 
-    function setRevealTimeout(uint32 revealTimeout) public onlyOwner {
-        REVEAL_TIMEOUT = revealTimeout;
+    function setRevealTimeout(uint256 newTimeout) public onlyOwner {
+        revealTimeout = newTimeout;
     }
 
-    function getTimeLeft(address player, uint256 gameId) public view returns (uint256) {
-        Game memory game = getGame(player, gameId);
-        require(!didTimerRunOut(game.timerStart), Errors.TimerFinished);
-        require(game.p2 != address(0), Errors.NoActiveTimer);
-        return REVEAL_TIMEOUT - (block.timestamp - game.timerStart);
-    }
-
+    // @notice Returns a single game for Player 1
+    // @return Game struct 
     function getGame(address player, uint256 gameId) public view returns (Game memory) {
         Game[] storage games = Games[player];
         require(games.length > gameId, Errors.IndexOutOfBounds);
@@ -88,32 +85,52 @@ contract PRS is Ownable, TaxableGame {
         return games[gameId];
     }
 
-    function listGames(address player) public view returns (Game[] memory) {
+    // @notice Returns all games that an address is Player 1 for.
+    function listGamesFor(address player) public view returns (Game[] memory) {
         return Games[player];
     }
 
+    // @notice Return time left after Player 2 has revealed their move.
+    function getTimeLeft(address player, uint256 gameId) public view returns (uint256) {
+        Game memory game = getGame(player, gameId);
+        require(!_didTimerRunOut(game.timerStart), Errors.TimerFinished);
+        require(game.p2 != address(0), Errors.NoActiveTimer);
+        return revealTimeout - (block.timestamp - game.timerStart);
+    }
+
+    // @notice Return entry fee for a game being played.
     function getGameEntryFee(address player, uint256 gameId) public view returns (uint256) {
         Game memory game = getGame(player, gameId);
         return game.entryFee;
     }
 
+    /* ========================================================================================= */
+    // Commit
+    /* ========================================================================================= */
+
     // @notice Whoever calls this makes a new game and becomes "p1"
-    function makeGame(bytes32 encChoice) public payable {
-        require(msg.value >= MIN_ENTRY_FEE, Errors.AmountTooLow);
+    //         Player can make multiple games at a time.
+    function startGame(bytes32 encChoice, uint256 entryFee)
+        public
+        checkEntryFeeEnough(entryFee)
+        checkAddressHasSufficientBalance(entryFee)
+    {
         Game memory game;
-        game.entryFee = msg.value;
+        game.entryFee = entryFee;
         game.p1SaltedChoice = encChoice;
 
         Games[msg.sender].push(game);
-        emit CreatedGame(msg.sender, msg.value, block.timestamp);
+        _subtractFromBalance(msg.sender, entryFee);
+        emit CreatedGame(msg.sender, entryFee, block.timestamp);
     }
 
     // @notice Allows p2 to join an existing game by gameId
     function joinGame(
         address p1,
         uint256 gameId,
-        Choices p2Choice
-    ) public payable {
+        Choices p2Choice,
+        uint256 entryFee
+    ) public checkAddressHasSufficientBalance(entryFee) {
         require(p1 != msg.sender, Errors.CannotJoinGame);
 
         Game[] storage games = Games[p1];
@@ -121,47 +138,59 @@ contract PRS is Ownable, TaxableGame {
 
         Game storage game = games[gameId];
         require(game.p2 == address(0), Errors.CannotJoinGame);
-        require(msg.value >= game.entryFee, Errors.AmountTooLow);
+        require(entryFee >= game.entryFee, Errors.AmountTooLow);
 
         game.p2 = msg.sender;
         game.p2Choice = p2Choice;
         game.timerStart = block.timestamp;
-        emit JoinedGameOf(msg.sender, p1, gameId, msg.value, block.timestamp);
+
+        _subtractFromBalance(msg.sender, entryFee);
+        emit JoinedGameOf(msg.sender, p1, gameId, entryFee, block.timestamp);
     }
+
+    /* ========================================================================================= */
+    // Reveal / Resolve
+    /* ========================================================================================= */
 
     // @notice P1 can resolve the game by sending their clear-text move after P2 makes a move
     function resolveGameP1(uint256 gameId, string calldata movePw) public {
         Game memory game = getGame(msg.sender, gameId);
         require(game.p2 != address(0), Errors.NoSecondPlayer);
+        Choices p1Choice = _getHashChoice(game.p1SaltedChoice, movePw);
 
-        Choices p1Choice = getHashChoice(game.p1SaltedChoice, movePw);
-
-        chooseWinner(p1Choice, game.p2Choice, msg.sender, game.p2, game.entryFee);
+        _chooseWinner(p1Choice, game.p2Choice, msg.sender, game.p2, game.entryFee*2);
     }
 
-    // @notice If P1 does not resolveGame within the alotted time, P2 can take the pot
-    //         by resolving after REVEAL_TIMEOUT has elapsed.
+    // @notice If no resolveGameP1 within the alotted time, P2 can take the pot
+    //         by resolving after revealTimeout has elapsed.
     //         This prevents P1 from griefing by never revealing their move, essentially
     //         forcing a deadlock.
     function resolveGameP2(address p1, uint256 gameId) public {
         Game memory game = getGame(p1, gameId);
         require(game.p2 != address(0), Errors.NoSecondPlayer);
-        require(didTimerRunOut(game.timerStart), Errors.TimerStillRunning);
+        require(game.p2 == msg.sender, "You aren't the second player of this game");
+        require(_didTimerRunOut(game.timerStart), Errors.TimerStillRunning);
 
-        payoutWithAppliedTax(msg.sender, game.entryFee);
+        _payout(msg.sender, game.entryFee*2);
     }
 
-    function chooseWinner(
+    /* ========================================================================================= */
+    // Choosing a winner
+    /* ========================================================================================= */
+
+    // @notice How PRS chooses a winner when two choices are revealed.
+    //         Essential that you ZERO OUT ANY GAME BALANCES before calling this.
+    function _chooseWinner(
         Choices p1Choice,
         Choices p2Choice,
         address p1,
         address p2,
-        uint256 entryFee
+        uint256 gameBalance
     ) internal {
         if (p1Choice == p2Choice) {
-            payoutWithAppliedTax(p1, entryFee / 2);
-            payoutWithAppliedTax(p2, entryFee / 2);
-            emit GameDraw(p1, p1Choice, p2, p2Choice, entryFee, block.timestamp);
+            _payout(p1, gameBalance / 2);
+            _payout(p2, gameBalance / 2);
+            emit GameDraw(p1, p1Choice, p2, p2Choice, gameBalance, block.timestamp);
             return;
         }
 
@@ -170,32 +199,32 @@ contract PRS is Ownable, TaxableGame {
             (p1Choice == Choices.ROCK && p2Choice == Choices.SCISSORS) ||
             (p1Choice == Choices.SCISSORS && p2Choice == Choices.PAPER)
         ) {
-            payoutWithAppliedTax(p1, entryFee);
-            emit WonGameAgainst(p1, p1Choice, p2, p2Choice, entryFee, block.timestamp);
+            _payout(p1, gameBalance);
+            emit WonGameAgainst(p1, p1Choice, p2, p2Choice, gameBalance, block.timestamp);
             return;
         }
 
         if (p1Choice == Choices.FORFEIT) {
-            payoutWithAppliedTax(p2, entryFee);
-            emit WonGameAgainst(p2, p2Choice, p1, p1Choice, entryFee, block.timestamp);
+            _payout(p2, gameBalance);
+            emit WonGameAgainst(p2, p2Choice, p1, p1Choice, gameBalance, block.timestamp);
             return;
         }
 
         if (p2Choice == Choices.FORFEIT) {
-            payoutWithAppliedTax(p1, entryFee);
-            emit WonGameAgainst(p1, p1Choice, p2, p2Choice, entryFee, block.timestamp);
+            _payout(p1, gameBalance);
+            emit WonGameAgainst(p1, p1Choice, p2, p2Choice, gameBalance, block.timestamp);
             return;
         }
 
-        payoutWithAppliedTax(p2, entryFee);
-        emit WonGameAgainst(p2, p2Choice, p1, p1Choice, entryFee, block.timestamp);
+        _payout(p2, gameBalance);
+        emit WonGameAgainst(p2, p2Choice, p1, p1Choice, gameBalance, block.timestamp);
     }
 
-    function didTimerRunOut(uint256 timerStart) internal view returns (bool) {
-        return block.timestamp > timerStart + REVEAL_TIMEOUT;
+    function _didTimerRunOut(uint256 timerStart) internal view returns (bool) {
+        return block.timestamp > timerStart + revealTimeout;
     }
 
-    function getHashChoice(bytes32 hashChoice, string calldata clearChoice)
+    function _getHashChoice(bytes32 hashChoice, string calldata clearChoice)
         internal
         pure
         returns (Choices)

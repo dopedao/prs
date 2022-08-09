@@ -41,7 +41,7 @@ const config: HardhatUserConfig = {
       tasks: [
         'clean',
         { command: 'compile', params: { quiet: true } },
-        { command: 'test', params: { noCompile: true, parallel: true } },
+        { command: 'test', params: { noCompile: true } },
       ],
       files: ['./src', './test'],
       ignoredFiles: ['**/.git', 'dist/*', 'types/*'],
