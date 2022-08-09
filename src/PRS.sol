@@ -96,7 +96,7 @@ contract PRS is Ownable, Pausable, TaxableGame {
         Game memory game = getGame(player, gameId);
         if (_didTimerRunOut(game.timerStart)) revert Errors.TimerFinished();
         if (game.p2 == address(0)) revert Errors.NoActiveTimer();
-        return REVEAL_TIMEOUT - (block.timestamp - game.timerStart);
+        return revealTimeout - (block.timestamp - game.timerStart);
     }
 
     // @notice Return entry fee for a game being played.
