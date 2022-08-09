@@ -3,6 +3,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/Address.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { Errors } from "./Errors.sol";
 import { TaxableGame } from "./TaxableGame.sol";
 
@@ -45,7 +46,7 @@ import { TaxableGame } from "./TaxableGame.sol";
 //
 // @author DOPE DAO
 // @notice This contract is NOT SECURITY AUDITED. Use at your own risk.
-contract PRS is Ownable, TaxableGame {
+contract PRS is Ownable, TaxableGame, Pausable {
     // @notice Player 1 has to reveal their move by this time after Player 2 reveals theirs,
     //         or Player 2 can reveal and take the pot.
     uint32 public constant REVEAL_TIMEOUT = 12 hours;
@@ -100,6 +101,21 @@ contract PRS is Ownable, TaxableGame {
         return game.entryFee;
     }
 
+    // @notice Pause contract incase of suspicious activity
+    function pauseContract() public onlyOwner {
+        _pause();
+    }
+
+    // @notice Unpause contract
+    function unpauseContract() public onlyOwner {
+        _unpause();
+    }
+
+    // @notice Gets the current contract state
+    function contractState() public view onlyOwner returns (bool) {
+        return paused();
+    }
+
     /* ========================================================================================= */
     // Commit
     /* ========================================================================================= */
@@ -110,6 +126,7 @@ contract PRS is Ownable, TaxableGame {
         public
         checkEntryFeeEnough(entryFee)
         checkAddressHasSufficientBalance(entryFee)
+        whenNotPaused
     {
         Game memory game;
         game.entryFee = entryFee;
@@ -126,7 +143,7 @@ contract PRS is Ownable, TaxableGame {
         uint256 gameId,
         Choices p2Choice,
         uint256 entryFee
-    ) public checkAddressHasSufficientBalance(entryFee) {
+    ) public checkAddressHasSufficientBalance(entryFee) whenNotPaused {
         require(p1 != msg.sender, Errors.CannotJoinGame);
 
         Game[] storage games = Games[p1];
@@ -149,7 +166,7 @@ contract PRS is Ownable, TaxableGame {
     /* ========================================================================================= */
 
     // @notice P1 can resolve the game by sending their clear-text move after P2 makes a move
-    function resolveGameP1(uint256 gameId, string calldata movePw) public {
+    function resolveGameP1(uint256 gameId, string calldata movePw) public whenNotPaused {
         Game memory game = getGame(msg.sender, gameId);
         require(game.p2 != address(0), Errors.NoSecondPlayer);
         Choices p1Choice = _getHashChoice(game.p1SaltedChoice, movePw);
@@ -161,7 +178,7 @@ contract PRS is Ownable, TaxableGame {
     //         by resolving after REVEAL_TIMEOUT has elapsed.
     //         This prevents P1 from griefing by never revealing their move, essentially
     //         forcing a deadlock.
-    function resolveGameP2(address p1, uint256 gameId) public {
+    function resolveGameP2(address p1, uint256 gameId) public whenNotPaused {
         Game memory game = getGame(p1, gameId);
         require(game.p2 != address(0), Errors.NoSecondPlayer);
         require(game.p2 == msg.sender, "You aren't the second player of this game");
