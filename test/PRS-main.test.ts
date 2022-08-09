@@ -4,6 +4,26 @@ import { ERRORS, CHOICES } from './lib/constants';
 import { deployPrs, setupGame } from './lib/helpers';
 
 describe('PRS-main', function () {
+
+  describe('revealTimeout', function() {
+    it('Allows owner to set it', async function () {
+      const { prsMock, p1, p2 } = await deployPrs();
+      const newTimeout = 60*1000; // 60 seconds
+      const defaultTimeout = await prsMock.revealTimeout(); // 12 hours
+      expect(defaultTimeout).to.not.equal(newTimeout);
+
+      await prsMock.connect(p1).setRevealTimeout(newTimeout);
+      const updatedTimeout = await prsMock.revealTimeout();
+      expect(updatedTimeout).to.equal(newTimeout);
+    });
+    it('Prevents anyone else from setting', async function () {
+      const { prsMock, p1, p2 } = await deployPrs();
+      await expect(prsMock.connect(p2).setRevealTimeout(60*1000)).
+        to.be.reverted;
+    });
+
+  });
+
   describe('startGame', function () {
     it('Creates a game', async function () {
       const { prsMock, p1 } = await deployPrs();

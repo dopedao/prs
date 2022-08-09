@@ -48,7 +48,7 @@ import { TaxableGame } from "./TaxableGame.sol";
 contract PRS is Ownable, TaxableGame {
     // @notice Player 1 has to reveal their move by this time after Player 2 reveals theirs,
     //         or Player 2 can reveal and take the pot.
-    uint32 public constant REVEAL_TIMEOUT = 12 hours;
+    uint256 public revealTimeout = 12 hours;
 
     enum Choices {
         ROCK,
@@ -72,6 +72,10 @@ contract PRS is Ownable, TaxableGame {
     event WonGameAgainst(address indexed, Choices, address indexed, Choices, uint256, uint256);
     event GameDraw(address indexed, Choices, address indexed, Choices, uint256, uint256);
 
+    function setRevealTimeout(uint256 newTimeout) public onlyOwner {
+        revealTimeout = newTimeout;
+    }
+
     // @notice Returns a single game for Player 1
     // @return Game struct 
     function getGame(address player, uint256 gameId) public view returns (Game memory) {
@@ -91,7 +95,7 @@ contract PRS is Ownable, TaxableGame {
         Game memory game = getGame(player, gameId);
         require(!_didTimerRunOut(game.timerStart), Errors.TimerFinished);
         require(game.p2 != address(0), Errors.NoActiveTimer);
-        return REVEAL_TIMEOUT - (block.timestamp - game.timerStart);
+        return revealTimeout - (block.timestamp - game.timerStart);
     }
 
     // @notice Return entry fee for a game being played.
@@ -158,7 +162,7 @@ contract PRS is Ownable, TaxableGame {
     }
 
     // @notice If no resolveGameP1 within the alotted time, P2 can take the pot
-    //         by resolving after REVEAL_TIMEOUT has elapsed.
+    //         by resolving after revealTimeout has elapsed.
     //         This prevents P1 from griefing by never revealing their move, essentially
     //         forcing a deadlock.
     function resolveGameP2(address p1, uint256 gameId) public {
@@ -217,7 +221,7 @@ contract PRS is Ownable, TaxableGame {
     }
 
     function _didTimerRunOut(uint256 timerStart) internal view returns (bool) {
-        return block.timestamp > timerStart + REVEAL_TIMEOUT;
+        return block.timestamp > timerStart + revealTimeout;
     }
 
     function _getHashChoice(bytes32 hashChoice, string calldata clearChoice)
