@@ -61,19 +61,15 @@ describe('PRS-pause', function () {
     });
   });
 
-    describe('unpause', async function () {
-        it("Should unpause the contract after a pause", async function () {
-            const { clearChoice, entryFee, gameIndex, hashedChoice, p1, p2, prsMock } = await setupGame();
+  describe('unpause', async function () {
+    it('Should unpause the contract after a pause', async function () {
+      const { clearChoice, entryFee, gameIndex, hashedChoice, p1, p2, prsMock } = await setupGame();
 
-            await prsMock.connect(p1).pauseContract();
-            await expect(
-                await prsMock.connect(p1).contractState()
-            ).to.equal(true);
+      await prsMock.connect(p1).pauseContract();
+      await expect(await prsMock.connect(p1).contractState()).to.equal(true);
 
-            await prsMock.connect(p1).unpauseContract();
-            await expect(
-                await prsMock.connect(p1).contractState()
-            ).to.equal(false);
-        });
+      await prsMock.connect(p1).unpauseContract();
+      await expect(await prsMock.connect(p1).contractState()).to.equal(false);
     });
+  });
 });
