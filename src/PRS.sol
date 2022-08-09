@@ -101,13 +101,13 @@ contract PRS is Ownable, TaxableGame, Pausable {
         return game.entryFee;
     }
 
-    // @notice Pause contract incase of suspicious activity
-    function pauseContract() public onlyOwner {
+    // @notice Pause game incase of suspicious activity
+    function pauseGame() public onlyOwner {
         _pause();
     }
 
-    // @notice Unpause contract
-    function unpauseContract() public onlyOwner {
+    // @notice Unpause game
+    function pauseGame() public onlyOwner {
         _unpause();
     }
 
