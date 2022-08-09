@@ -3,10 +3,11 @@ pragma solidity ^0.8.9;
 
 import { Errors } from "./Errors.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 // @notice Abstract contract to handle fees, taxes, balances, and payouts of players
-abstract contract TaxableGame is Ownable, ReentrancyGuard {
+abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     // @notice Variable minimum entry fee in gwei
     uint256 public minEntryFee = 10000000 gwei; // 0.01 eth
     // @notice Tax percent the game takes for each round of play
@@ -39,7 +40,7 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard {
     }
 
     // @notice Players can withdraw their balance from the contract
-    function withdraw() public payable {
+    function withdraw() public payable whenNotPaused {
         uint256 balance = balanceOf(msg.sender);
         require(address(this).balance >= balance, Errors.NotEnoughMoneyInContract);
         _setBalance(msg.sender, 0);

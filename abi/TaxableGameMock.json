@@ -1,10 +1,13 @@
 [
   "event OwnershipTransferred(address indexed,address indexed)",
   "event PaidOut(address indexed,uint256,uint256)",
+  "event Paused(address)",
+  "event Unpaused(address)",
   "function balanceOf(address) view returns (uint256)",
   "function getBalance() view returns (uint256)",
   "function minEntryFee() view returns (uint256)",
   "function owner() view returns (address)",
+  "function paused() view returns (bool)",
   "function renounceOwnership()",
   "function setMinEntryFee(uint256)",
   "function setTaxPercent(uint256)",

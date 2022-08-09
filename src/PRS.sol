@@ -46,7 +46,7 @@ import { TaxableGame } from "./TaxableGame.sol";
 //
 // @author DOPE DAO
 // @notice This contract is NOT SECURITY AUDITED. Use at your own risk.
-contract PRS is Ownable, TaxableGame, Pausable {
+contract PRS is Ownable, Pausable, TaxableGame {
     // @notice Player 1 has to reveal their move by this time after Player 2 reveals theirs,
     //         or Player 2 can reveal and take the pot.
     uint32 public constant REVEAL_TIMEOUT = 12 hours;
