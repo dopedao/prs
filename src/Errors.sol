@@ -2,15 +2,16 @@
 pragma solidity ^0.8.9;
 
 library Errors {
-    string constant AmountTooLow = "Amount too low";
-    string constant CannotJoinGame = "Cannot join game";
-    string constant CannotRemoveGame = "Cannot remove game";
-    string constant IndexOutOfBounds = "Index out of bounds";
-    string constant InvalidPassword = "Invalid password";
-    string constant NoActiveTimer = "No active timer";
-    string constant NoSecondPlayer = "No second player";
-    string constant NotEnoughMoneyInContract = "Not enough money in Contract";
-    string constant PlayerBalanceNotEnough = "Player balance not large enough";
-    string constant TimerFinished = "Timer finished";
-    string constant TimerStillRunning = "Timer still running";
+    error AmountTooLow(uint256 available, uint256 required);
+    error CannotJoinGame(bool alreadHasP2, bool tryingToJoinOwnGame);
+    error InvalidBalance(uint256 balance);
+    error IndexOutOfBounds(uint256 gameId);
+    error InvalidPassword();
+    error NoActiveTimer();
+    error NoSecondPlayer();
+    error NotEnoughMoneyInContract(uint256 available, uint256 requested);
+    error NotSecondPlayer(address expected, address received);
+    error PlayerBalanceNotEnough(uint256 available, uint256 required);
+    error TimerFinished();
+    error TimerStillRunning();
 }
