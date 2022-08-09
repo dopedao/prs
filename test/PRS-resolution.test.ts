@@ -89,9 +89,9 @@ describe('PRS-resolution', function () {
       const p2Choice = CHOICES.ROCK;
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2Choice, entryFee);
 
-      // P1 does not reveal their move within alotted time
-      const revealTimeout = await prsMock.REVEAL_TIMEOUT();
-      await network.provider.send('evm_increaseTime', [revealTimeout]);
+      // P1 does not reveal their move within allotted time
+      const revealTimeout = await prsMock.revealTimeout();
+      await network.provider.send('evm_increaseTime', [revealTimeout.toNumber()]);
       await network.provider.send('evm_mine');
 
       // P2 still claims victory so P1 can't grief
