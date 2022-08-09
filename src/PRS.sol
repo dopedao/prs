@@ -107,7 +107,7 @@ contract PRS is Ownable, TaxableGame, Pausable {
     }
 
     // @notice Unpause game
-    function pauseGame() public onlyOwner {
+    function unpauseGame() public onlyOwner {
         _unpause();
     }
 
