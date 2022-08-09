@@ -13,17 +13,17 @@ contract PRSMock is PRS {
         address p2,
         uint256 entryFee
     ) public {
-        return chooseWinner(p1Choice, p2Choice, p1, p2, entryFee);
+        return _chooseWinner(p1Choice, p2Choice, p1, p2, entryFee);
     }
 
     function unsafeDidTimerRunOut(uint256 timerStart) public view returns (bool) {
-        return didTimerRunOut(timerStart);
+        return _didTimerRunOut(timerStart);
     }
 
     function unsafeGetHashChoice(bytes32 hashChoice, string calldata clearChoice)
         public
         pure
         returns (Choices) {
-        return getHashChoice(hashChoice, clearChoice);
+        return _getHashChoice(hashChoice, clearChoice);
     }
 }
