@@ -111,11 +111,6 @@ contract PRS is Ownable, TaxableGame, Pausable {
         _unpause();
     }
 
-    // @notice Gets the current contract state
-    function contractState() public view onlyOwner returns (bool) {
-        return paused();
-    }
-
     /* ========================================================================================= */
     // Commit
     /* ========================================================================================= */
