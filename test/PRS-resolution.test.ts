@@ -14,16 +14,17 @@ describe('PRS-resolution', function () {
 
       const oufOfBoundsIndex = 1;
 
-      await expect(
-        prsMock.connect(p1).resolveGameP1(oufOfBoundsIndex, clearChoice),
-      ).to.be.revertedWith(ERRORS.IndexOutOfBounds);
+      await expect(prsMock.connect(p1).resolveGameP1(oufOfBoundsIndex, clearChoice))
+        .to.be.revertedWithCustomError(prsMock, ERRORS.IndexOutOfBounds)
+        .withArgs(oufOfBoundsIndex);
     });
 
     it('Should revert if game does not have a second player', async function () {
       const { prsMock, p1, clearChoice } = await setupGame();
 
-      await expect(prsMock.connect(p1).resolveGameP1(0, clearChoice)).to.be.revertedWith(
-        ERRORS.NoSecondPlayer,
+      await expect(prsMock.connect(p1).resolveGameP1(0, clearChoice)).to.be.revertedWithCustomError(
+        prsMock,
+        'NoSecondPlayer',
       );
     });
 
@@ -41,9 +42,9 @@ describe('PRS-resolution', function () {
       const gameIndex = 0;
       const gameClearChoice = 'test';
 
-      await expect(
-        prsMock.connect(p1).resolveGameP1(gameIndex, gameClearChoice),
-      ).to.be.revertedWith(ERRORS.IndexOutOfBounds);
+      await expect(prsMock.connect(p1).resolveGameP1(gameIndex, gameClearChoice))
+        .to.be.revertedWithCustomError(prsMock, ERRORS.IndexOutOfBounds)
+        .withArgs(gameIndex);
     });
   });
 
@@ -54,17 +55,18 @@ describe('PRS-resolution', function () {
       const p2Choice = CHOICES.PAPER;
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2Choice, entryFee);
 
-      await expect(prsMock.connect(p2).resolveGameP2(p1.address, gameIndex)).to.revertedWith(
-        ERRORS.TimerStillRunning,
-      );
+      await expect(
+        prsMock.connect(p2).resolveGameP2(p1.address, gameIndex),
+      ).to.revertedWithCustomError(prsMock, ERRORS.TimerStillRunning);
     });
 
     it("Shouldn't let anyone resolve the game if game doesn't have a second player", async function () {
       const { gameIndex, p1, p2, prsMock } = await setupGame();
       const [someRando] = await ethers.getSigners();
 
-      await expect(prsMock.connect(someRando).resolveGameP2(p1.address, gameIndex)).
-        to.revertedWith(ERRORS.NoSecondPlayer,);
+      await expect(
+        prsMock.connect(someRando).resolveGameP2(p1.address, gameIndex),
+      ).to.revertedWithCustomError(prsMock, ERRORS.NoSecondPlayer);
     });
 
     it('Should clean up after a tie', async function () {
@@ -74,7 +76,7 @@ describe('PRS-resolution', function () {
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2Choice, entryFee);
       await prsMock.connect(p1).resolveGameP1(gameIndex, clearChoice);
 
-      // const game = await prsMock.connect(p1).getGame(p1.address, gameIndex);      
+      // const game = await prsMock.connect(p1).getGame(p1.address, gameIndex);
       // Game is a tie
     });
 
@@ -99,7 +101,7 @@ describe('PRS-resolution', function () {
       const bigIntNewEntryFee = parseEther(newEntryFee);
       const TAX = await prsMock.taxPercent();
       const totalTax = bigIntNewEntryFee.mul(2).div(100).mul(TAX);
-      const expectedP2Bal = (bigIntNewEntryFee.mul(2)).sub(totalTax);
+      const expectedP2Bal = bigIntNewEntryFee.mul(2).sub(totalTax);
 
       // console.log(ethers.utils.formatEther(totalTax));
       // console.log(ethers.utils.formatEther(expectedP2Bal));

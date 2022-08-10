@@ -3,6 +3,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/Address.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { Errors } from "./Errors.sol";
 import { TaxableGame } from "./TaxableGame.sol";
 
@@ -45,7 +46,7 @@ import { TaxableGame } from "./TaxableGame.sol";
 //
 // @author DOPE DAO
 // @notice This contract is NOT SECURITY AUDITED. Use at your own risk.
-contract PRS is Ownable, TaxableGame {
+contract PRS is Ownable, Pausable, TaxableGame {
     // @notice Player 1 has to reveal their move by this time after Player 2 reveals theirs,
     //         or Player 2 can reveal and take the pot.
     uint256 public revealTimeout = 12 hours;
@@ -80,7 +81,7 @@ contract PRS is Ownable, TaxableGame {
     // @return Game struct 
     function getGame(address player, uint256 gameId) public view returns (Game memory) {
         Game[] storage games = Games[player];
-        require(games.length > gameId, Errors.IndexOutOfBounds);
+        if (games.length <= gameId) revert Errors.IndexOutOfBounds(gameId);
 
         return games[gameId];
     }
@@ -93,8 +94,8 @@ contract PRS is Ownable, TaxableGame {
     // @notice Return time left after Player 2 has revealed their move.
     function getTimeLeft(address player, uint256 gameId) public view returns (uint256) {
         Game memory game = getGame(player, gameId);
-        require(!_didTimerRunOut(game.timerStart), Errors.TimerFinished);
-        require(game.p2 != address(0), Errors.NoActiveTimer);
+        if (_didTimerRunOut(game.timerStart)) revert Errors.TimerFinished();
+        if (game.p2 == address(0)) revert Errors.NoActiveTimer();
         return revealTimeout - (block.timestamp - game.timerStart);
     }
 
@@ -102,6 +103,16 @@ contract PRS is Ownable, TaxableGame {
     function getGameEntryFee(address player, uint256 gameId) public view returns (uint256) {
         Game memory game = getGame(player, gameId);
         return game.entryFee;
+    }
+
+    // @notice Pause game incase of suspicious activity
+    function pauseGame() public onlyOwner {
+        _pause();
+    }
+
+    // @notice Unpause game
+    function unpauseGame() public onlyOwner {
+        _unpause();
     }
 
     /* ========================================================================================= */
@@ -114,6 +125,7 @@ contract PRS is Ownable, TaxableGame {
         public
         checkEntryFeeEnough(entryFee)
         checkAddressHasSufficientBalance(entryFee)
+        whenNotPaused
     {
         Game memory game;
         game.entryFee = entryFee;
@@ -130,15 +142,15 @@ contract PRS is Ownable, TaxableGame {
         uint256 gameId,
         Choices p2Choice,
         uint256 entryFee
-    ) public checkAddressHasSufficientBalance(entryFee) {
-        require(p1 != msg.sender, Errors.CannotJoinGame);
+    ) public checkAddressHasSufficientBalance(entryFee) whenNotPaused {
+        if (p1 == msg.sender) revert Errors.CannotJoinGame(false, true);
 
         Game[] storage games = Games[p1];
-        require(games.length > gameId, Errors.IndexOutOfBounds);
+        if (games.length <= gameId) revert Errors.IndexOutOfBounds(gameId);
 
         Game storage game = games[gameId];
-        require(game.p2 == address(0), Errors.CannotJoinGame);
-        require(entryFee >= game.entryFee, Errors.AmountTooLow);
+        if (game.p2 != address(0)) revert Errors.CannotJoinGame(true, false);
+        if (entryFee < game.entryFee) revert Errors.AmountTooLow(entryFee, game.entryFee);
 
         game.p2 = msg.sender;
         game.p2Choice = p2Choice;
@@ -153,9 +165,9 @@ contract PRS is Ownable, TaxableGame {
     /* ========================================================================================= */
 
     // @notice P1 can resolve the game by sending their clear-text move after P2 makes a move
-    function resolveGameP1(uint256 gameId, string calldata movePw) public {
+    function resolveGameP1(uint256 gameId, string calldata movePw) public whenNotPaused {
         Game memory game = getGame(msg.sender, gameId);
-        require(game.p2 != address(0), Errors.NoSecondPlayer);
+        if (game.p2 == address(0)) revert Errors.NoSecondPlayer();
         Choices p1Choice = _getHashChoice(game.p1SaltedChoice, movePw);
 
         _chooseWinner(p1Choice, game.p2Choice, msg.sender, game.p2, game.entryFee*2);
@@ -165,11 +177,12 @@ contract PRS is Ownable, TaxableGame {
     //         by resolving after revealTimeout has elapsed.
     //         This prevents P1 from griefing by never revealing their move, essentially
     //         forcing a deadlock.
-    function resolveGameP2(address p1, uint256 gameId) public {
+    function resolveGameP2(address p1, uint256 gameId) public whenNotPaused {
         Game memory game = getGame(p1, gameId);
-        require(game.p2 != address(0), Errors.NoSecondPlayer);
-        require(game.p2 == msg.sender, "You aren't the second player of this game");
-        require(_didTimerRunOut(game.timerStart), Errors.TimerStillRunning);
+
+        if (game.p2 == address(0)) revert Errors.NoSecondPlayer();
+        if (game.p2 != msg.sender) revert Errors.NotSecondPlayer(game.p2, msg.sender);
+        if (!_didTimerRunOut(game.timerStart)) revert Errors.TimerStillRunning();
 
         _payout(msg.sender, game.entryFee*2);
     }
@@ -230,7 +243,7 @@ contract PRS is Ownable, TaxableGame {
         returns (Choices)
     {
         bytes32 hashedClearChoice = sha256(abi.encodePacked(clearChoice));
-        require(hashChoice == hashedClearChoice, Errors.InvalidPassword);
+        if (hashChoice != hashedClearChoice) revert Errors.InvalidPassword();
 
         bytes1 first = bytes(clearChoice)[0];
 

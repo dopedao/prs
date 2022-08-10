@@ -1,0 +1,14 @@
+[
+  "error AmountTooLow(uint256,uint256)",
+  "error CannotJoinGame(bool,bool)",
+  "error IndexOutOfBounds(uint256)",
+  "error InvalidBalance(uint256)",
+  "error InvalidPassword()",
+  "error NoActiveTimer()",
+  "error NoSecondPlayer()",
+  "error NotEnoughMoneyInContract(uint256,uint256)",
+  "error NotSecondPlayer(address,address)",
+  "error PlayerBalanceNotEnough(uint256,uint256)",
+  "error TimerFinished()",
+  "error TimerStillRunning()"
+]
