@@ -14,4 +14,6 @@ library Errors {
     error PlayerBalanceNotEnough(uint256 available, uint256 required);
     error TimerFinished();
     error TimerStillRunning();
+    error AlreadyRevealed(address player, uint256 gameId);
+    error NotResolvable(bool timerStillRunning, bool p1Revealed, bool p2Revealed);
 }
