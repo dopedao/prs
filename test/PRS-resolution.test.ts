@@ -2,16 +2,14 @@ import { expect } from 'chai';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers, network } from 'hardhat';
 import { ERRORS, CHOICES } from './lib/constants';
-import { deployPrs, setupGame } from './lib/helpers';
+import { clearAndHashChoice, deployPrs, setupGame } from './lib/helpers';
 
 describe('PRS-resolution', function () {
   describe('resolveGameP1', function () {
     it('Should revert on index out of bounds', async function () {
       const { clearChoice, entryFee, gameIndex, hashedChoice, p1, p2, prsMock } = await setupGame();
+      const [p2ClearChoice, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
 
-      const p2Choice = CHOICES.PAPER;
-      const p2ChoicePw = p2Choice + '-' + 'test';
-      const p2HashChoice = ethers.utils.soliditySha256(['string'], [p2ChoicePw]);
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
 
       const outOfBoundsIndex = 1;
@@ -32,12 +30,9 @@ describe('PRS-resolution', function () {
 
     it('Should let p1 resolve the game', async function () {
       const { clearChoice, entryFee, gameIndex, p1, p2, prsMock } = await setupGame();
+      const [p2ChoicePw, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
 
-      const p2Choice = CHOICES.PAPER;
-      const p2ChoicePw = p2Choice + '-' + 'test';
-      const p2HashChoice = ethers.utils.soliditySha256(['string'], [p2ChoicePw]);
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
-
       await prsMock.connect(p1).revealChoice(p1.address, 0, clearChoice);
       await prsMock.connect(p2).revealChoice(p1.address, 0, p2ChoicePw);
 
@@ -58,10 +53,7 @@ describe('PRS-resolution', function () {
   describe('resolveGame', function () {
     it("Shouldn't let p2 resolve the game if timer is still running", async function () {
       const { entryFee, gameIndex, p1, p2, prsMock } = await setupGame();
-
-      const p2Choice = CHOICES.PAPER;
-      const p2ChoicePw = p2Choice + '-' + 'test';
-      const p2HashChoice = ethers.utils.soliditySha256(['string'], [p2ChoicePw]);
+      const [p2ChoicePw, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
 
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
 
@@ -81,10 +73,8 @@ describe('PRS-resolution', function () {
 
     it('Should clean up after a tie', async function () {
       const { clearChoice, entryFee, gameIndex, p1, p2, prsMock } = await setupGame();
+      const [p2ChoicePw, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
 
-      const p2Choice = CHOICES.PAPER;
-      const p2ChoicePw = p2Choice + '-' + 'test';
-      const p2HashChoice = ethers.utils.soliditySha256(['string'], [p2ChoicePw]);
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
 
       await prsMock.connect(p1).revealChoice(p1.address, gameIndex, clearChoice);
@@ -102,9 +92,7 @@ describe('PRS-resolution', function () {
       const { entryFee, gameIndex, p1, p2, prsMock } = await setupGame(newEntryFee);
 
       // This choice should make p2 a loser
-      const p2Choice = CHOICES.ROCK;
-      const p2ChoicePw = p2Choice + '-' + 'test';
-      const p2HashChoice = ethers.utils.soliditySha256(['string'], [p2ChoicePw]);
+      const [p2ChoicePw, p2HashChoice] = clearAndHashChoice(CHOICES.ROCK);
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
 
       // P1 does not reveal their move within allotted time

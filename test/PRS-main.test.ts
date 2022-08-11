@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { ERRORS, CHOICES } from './lib/constants';
-import { deployPrs, setupGame } from './lib/helpers';
+import { clearAndHashChoice, deployPrs, setupGame } from './lib/helpers';
 
 describe('PRS-main', function () {
 
@@ -27,9 +27,7 @@ describe('PRS-main', function () {
   describe('startGame', function () {
     it('Creates a game', async function () {
       const { prsMock, p1 } = await deployPrs();
-
-      const clearChoice = '2-test';
-      const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
+      const [_, hashedChoice] = clearAndHashChoice(CHOICES.PAPER)
 
       const weiAmount = ethers.utils.parseEther('0.1');
       await p1.sendTransaction({ to: prsMock.address, value: weiAmount });
@@ -42,11 +40,9 @@ describe('PRS-main', function () {
 
     it('Reverts on entryFee below minimum', async function () {
       const { prsMock, p1 } = await setupGame();
+      const [_, hashedChoice] = clearAndHashChoice(CHOICES.PAPER)
 
-      const clearChoice = CHOICES.PAPER + '-' + 'test';
-      const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
       const minEntryFee = await prsMock.minEntryFee();
-
       const weiAmount = ethers.BigNumber.from('900000000000000'); /* 0.09 Eth */
 
       await expect(prsMock.connect(p1).startGame(hashedChoice, weiAmount))
@@ -59,9 +55,7 @@ describe('PRS-main', function () {
     it('Allows p2 to join the game', async function () {
       const { prsMock, p1, entryFee } = await setupGame();
       const [_, p2] = await ethers.getSigners();
-      const p2Choice = CHOICES.PAPER
-      const p2ClearChoice = p2Choice + '-test';
-      const p2HashedChoice = ethers.utils.soliditySha256(['string'], [p2ClearChoice]);
+      const [p2ClearChoice, p2HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
       const gameIndex = 0;
 
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashedChoice, entryFee);
@@ -77,8 +71,7 @@ describe('PRS-main', function () {
     it('Reverts on too low of an entryFee', async function () {
       const { prsMock, p1, entryFee } = await setupGame();
       const [_, p2] = await ethers.getSigners();
-      const p2Choice = CHOICES.PAPER + '-' + 'test';
-      const p2HashedChoice = ethers.utils.soliditySha256(['string'], [p2Choice]);
+      const [__, p2HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
       const gameIndex = 0;
       const p2WeiAmount = ethers.utils.parseEther('0.0001');
 
@@ -90,8 +83,7 @@ describe('PRS-main', function () {
     it('Reverts on index out of bounds p2', async function () {
       const { prsMock, p1, entryFee } = await setupGame();
       const [_, p2] = await ethers.getSigners();
-      const p2Choice = CHOICES.PAPER;
-      const p2HashedChoice = ethers.utils.soliditySha256(['string'], [p2Choice]);
+      const [__, p2HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
       const gameIndex = 1;
 
       await expect(prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashedChoice, entryFee))
@@ -101,8 +93,7 @@ describe('PRS-main', function () {
 
     it('Prevents player joining his own game', async function () {
       const { prsMock, p1, entryFee } = await setupGame();
-      const p1Choice = CHOICES.PAPER + '-test';
-      const p1HashedChoice = ethers.utils.soliditySha256(['string'], [p1Choice]);
+      const [__, p1HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
       const gameIndex = 0;
       // Need enough to join twice
       await p1.sendTransaction({ to: prsMock.address, value: ethers.utils.parseEther('5') });
@@ -114,11 +105,8 @@ describe('PRS-main', function () {
     it('Reverts if game already has a second player', async function () {
       const { prsMock, p1, entryFee } = await setupGame();
       const [_, p2, p3] = await ethers.getSigners();
-      const p2Choice = CHOICES.PAPER + '-' + 'test';
-      const p2HashedChoice = ethers.utils.soliditySha256(['string'], [p2Choice]);
-
-      const p3Choice = CHOICES.ROCK + '-' + 'test';
-      const p3HashedChoice = ethers.utils.soliditySha256(['string'], [p3Choice]);
+      const [__, p2HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
+      const [___, p3HashedChoice] = clearAndHashChoice(CHOICES.ROCK);
 
       const gameIndex = 0;
 
