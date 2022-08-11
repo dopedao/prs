@@ -207,7 +207,7 @@ contract PRS is Ownable, Pausable, TaxableGame {
         // @notice Game is not resolvable if timer is still running and both players 
         //         have not revealed their move
         if (isTimerRunning && (isP2ChoiceNone || isP1ChoiceNone)) revert Errors.NotResolvable(isTimerRunning, isP1ChoiceNone, isP2ChoiceNone, false);
-        uint256 gamePot = game.entryFee * 2;
+        uint256 gameBalance = game.entryFee * 2;
 
         // @notice Set to false before we payout
         // no re-entrancy
@@ -216,19 +216,19 @@ contract PRS is Ownable, Pausable, TaxableGame {
         // @notice If we are here that means both players revealed their move.
         //         If both revealed their move in time we can choose a winner.
         if (isTimerRunning) {
-            _chooseWinner(game.p1ClearChoice, game.p2ClearChoice, p1, game.p2, gamePot);
+            _chooseWinner(game.p1ClearChoice, game.p2ClearChoice, p1, game.p2, gameBalance);
             return;
         }
 
         // @notice Timer ran out and only p2 did not reveal
         if (!isTimerRunning && !isP1ChoiceNone && isP2ChoiceNone) {
-            _payout(p1, gamePot);
+            _payout(p1, gameBalance);
             return;
         }
 
         // @notice Timer ran out and only p1 did not reveal
         if (!isTimerRunning && isP1ChoiceNone && !isP2ChoiceNone) {
-            _payout(game.p2, gamePot);
+            _payout(game.p2, gameBalance);
             return;
         }
         // @notice If both players fail to reveal the entryFee gets "burned" ;)
