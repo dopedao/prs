@@ -15,5 +15,5 @@ library Errors {
     error TimerFinished();
     error TimerStillRunning();
     error AlreadyRevealed(address player, uint256 gameId);
-    error NotResolvable(bool timerStillRunning, bool p1Revealed, bool p2Revealed);
+    error NotResolvable(bool timerStillRunning, bool p1Revealed, bool p2Revealed, bool alreadyResolved);
 }
