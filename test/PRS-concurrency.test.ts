@@ -44,18 +44,31 @@ describe('PRS-concurrency', function () {
       const clearChoice = CHOICES.PAPER + '-' + 'test';
       const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
+      const p2ClearChoice = p2Choice + '-' + 'test';
+      const hashedP2Choice = ethers.utils.soliditySha256(['string'], [p2ClearChoice]);
+
       for (let i = 0; i < numGames; i++) {
         await this.prsMock.connect(this.p1).startGame(hashedChoice, entryFeeEth);
       }
 
       for (let i = 0; i < numGames; i++) {
-        await this.prsMock.connect(this.p2).joinGame(this.p1.address, i, p2Choice, entryFeeEth);
+        await this.prsMock.connect(this.p2).joinGame(this.p1.address, i, hashedP2Choice, entryFeeEth);
+      }
+
+      // p1 reveals choice
+      for (let i = 0; i < numGames; i++) {
+        await this.prsMock.connect(this.p1).revealChoice(this.p1.address, i, clearChoice);
+      }
+
+      // p2 reveals chocie
+      for (let i = 0; i < numGames; i++) {
+        await this.prsMock.connect(this.p2).revealChoice(this.p1.address, i, p2ClearChoice);
       }
 
       // p2 wins every time
       for (let i = 0; i < numGames; i++) {
         expect(await this.prsMock.connect(this.p1).
-          resolveGameP1(gameIndex, clearChoice)
+          resolveGame(this.p1.address, i)
         ).to.not.be.reverted;
       }
 
