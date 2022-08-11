@@ -219,7 +219,7 @@ contract PRS is Ownable, Pausable, TaxableGame {
         }
 
         // @notice Timer ran out and only p1 did not reveal
-        if (!isTimerRunning && isP1ChoiceNone && isP2ChoiceNone) {
+        if (!isTimerRunning && isP1ChoiceNone && !isP2ChoiceNone) {
             _payout(game.p2, entryFee);
             return;
         }
