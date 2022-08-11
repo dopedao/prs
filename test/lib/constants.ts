@@ -12,10 +12,13 @@ export const ERRORS = {
   PlayerBalanceNotEnough: 'PlayerBalanceNotEnough',
   TimerFinished: 'TimerFinished',
   TimerStillRunning: 'TimerStillRunning',
+  NotResolvable: 'NotResolvable'
 };
 
 export enum CHOICES {
+  NONE,
   ROCK,
   PAPER,
   SCISSORS,
+  INVALID
 }

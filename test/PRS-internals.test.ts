@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { CHOICES } from './lib/constants';
+import { clearAndHashChoice } from './lib/helpers';
 
 describe('PRS-internals', function () {
   beforeEach(async function () {
@@ -13,9 +14,7 @@ describe('PRS-internals', function () {
   describe('_getHashChoice', function () {
     it('Should return Scissors', async function () {
       const choice = CHOICES.SCISSORS;
-
-      const clearChoice = `${choice}-test`;
-      const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
+      const [clearChoice, hashedChoice] = clearAndHashChoice(choice);
 
       await expect(
         await this.prsMock.connect(this.p1).unsafeGetHashChoice(hashedChoice, clearChoice),
@@ -24,9 +23,7 @@ describe('PRS-internals', function () {
 
     it('Should return Paper', async function () {
       const choice = CHOICES.PAPER;
-
-      const clearChoice = `${choice}-test`;
-      const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
+      const [clearChoice, hashedChoice] = clearAndHashChoice(choice);
 
       await expect(
         await this.prsMock.connect(this.p1).unsafeGetHashChoice(hashedChoice, clearChoice),
@@ -35,9 +32,7 @@ describe('PRS-internals', function () {
 
     it('Should return Rock', async function () {
       const choice = CHOICES.ROCK;
-
-      const clearChoice = `${choice}-test`;
-      const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
+      const [clearChoice, hashedChoice] = clearAndHashChoice(choice);
 
       await expect(
         await this.prsMock.connect(this.p1).unsafeGetHashChoice(hashedChoice, clearChoice),
