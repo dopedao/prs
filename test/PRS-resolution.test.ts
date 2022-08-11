@@ -8,7 +8,7 @@ describe('PRS-resolution', function () {
   describe('resolveGameP1', function () {
     it('Should revert on index out of bounds', async function () {
       const { clearChoice, entryFee, gameIndex, hashedChoice, p1, p2, prsMock } = await setupGame();
-      const [p2ClearChoice, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
+      const [, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
 
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
 
@@ -42,7 +42,6 @@ describe('PRS-resolution', function () {
     it("Shouldn't let p1 resolve the game if doesn't have one", async function () {
       const { prsMock, p1 } = await deployPrs();
       const gameIndex = 0;
-      const gameClearChoice = 'test';
 
       await expect(prsMock.connect(p1).resolveGame(p1.address, 0))
         .to.be.revertedWithCustomError(prsMock, ERRORS.IndexOutOfBounds)
@@ -53,7 +52,7 @@ describe('PRS-resolution', function () {
   describe('resolveGame', function () {
     it("Shouldn't let p2 resolve the game if timer is still running", async function () {
       const { entryFee, gameIndex, p1, p2, prsMock } = await setupGame();
-      const [p2ChoicePw, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
+      const [, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
 
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
 
@@ -94,6 +93,7 @@ describe('PRS-resolution', function () {
       // This choice should make p2 a loser
       const [p2ChoicePw, p2HashChoice] = clearAndHashChoice(CHOICES.ROCK);
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
+      await prsMock.connect(p2).revealChoice(p1.address, gameIndex, p2ChoicePw);
 
       // P1 does not reveal their move within allotted time
       const revealTimeout = await prsMock.revealTimeout();
@@ -113,6 +113,66 @@ describe('PRS-resolution', function () {
       // console.log(ethers.utils.formatEther(expectedP2Bal));
 
       await expect(p2EndBal).to.be.approximately(expectedP2Bal, parseEther('0.001'));
+    });
+
+    it('Resolves game in favor of p1 if p2 does not reveal no matter the outcome', async function () {
+      // Non-standard game setup with 5 eth
+      const newEntryFee = '5';
+      const { entryFee, gameIndex, p1, p2, prsMock, clearChoice } = await setupGame(newEntryFee);
+
+      // This choice should make p2 a loser
+      const [, p2HashChoice] = clearAndHashChoice(CHOICES.ROCK);
+      await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
+      await prsMock.connect(p1).revealChoice(p1.address, gameIndex, clearChoice);
+
+      // P2 does not reveal their move within allotted time
+      const revealTimeout = await prsMock.revealTimeout();
+      await network.provider.send('evm_increaseTime', [revealTimeout.toNumber()]);
+      await network.provider.send('evm_mine');
+
+      // P1 still claims victory so P2 can't grief
+      await prsMock.connect(p1).resolveGame(p1.address, gameIndex);
+
+      const p1EndBal = await prsMock.balanceOf(p1.address);
+      const bigIntNewEntryFee = parseEther(newEntryFee);
+      const TAX = await prsMock.taxPercent();
+      const totalTax = bigIntNewEntryFee.mul(2).div(100).mul(TAX);
+      const expectedP1Bal = bigIntNewEntryFee.mul(2).sub(totalTax);
+
+      // console.log(ethers.utils.formatEther(totalTax));
+      // console.log(ethers.utils.formatEther(expectedP2Bal));
+
+      await expect(p1EndBal).to.be.approximately(expectedP1Bal, parseEther('0.001'));
+    });
+
+    it('No one reveals, no one wins!', async function () {
+      // Non-standard game setup with 5 eth
+      const newEntryFee = '5';
+      const { entryFee, gameIndex, p1, p2, prsMock, clearChoice } = await setupGame(newEntryFee);
+
+      // This choice should make p2 a loser
+      const [, p2HashChoice] = clearAndHashChoice(CHOICES.ROCK);
+      await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
+      await prsMock.connect(p1).revealChoice(p1.address, gameIndex, clearChoice);
+
+      // P2 does not reveal their move within allotted time
+      const revealTimeout = await prsMock.revealTimeout();
+      await network.provider.send('evm_increaseTime', [revealTimeout.toNumber()]);
+      await network.provider.send('evm_mine');
+
+      // P1 still claims victory so P2 can't grief
+      await prsMock.connect(p1).resolveGame(p1.address, gameIndex);
+
+      const p1EndBal = await prsMock.balanceOf(p1.address);
+      const bigIntNewEntryFee = parseEther(newEntryFee);
+      const TAX = await prsMock.taxPercent();
+      const totalTax = bigIntNewEntryFee.mul(2).div(100).mul(TAX);
+      const expectedP1Bal = bigIntNewEntryFee.mul(2).sub(totalTax);
+
+      // console.log(ethers.utils.formatEther(totalTax));
+      // console.log(ethers.utils.formatEther(expectedP2Bal));
+
+      await expect(p1EndBal).to.be.approximately(expectedP1Bal, parseEther('0.001'));
     });
 
     it('Should prevent a game from being resolved and paid multiple times');
