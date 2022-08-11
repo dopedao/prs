@@ -59,25 +59,30 @@ describe('PRS-main', function () {
     it('Allows p2 to join the game', async function () {
       const { prsMock, p1, entryFee } = await setupGame();
       const [_, p2] = await ethers.getSigners();
-      const p2Choice = CHOICES.PAPER;
+      const p2Choice = CHOICES.PAPER
+      const p2ClearChoice = p2Choice + '-test';
+      const p2HashedChoice = ethers.utils.soliditySha256(['string'], [p2ClearChoice]);
       const gameIndex = 0;
 
-      await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2Choice, entryFee);
+      await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashedChoice, entryFee);
+
+      //p2 reveals
+      await prsMock.connect(p2).revealChoice(p1.address, gameIndex, p2ClearChoice);
       const game = await prsMock.connect(p1).getGame(p1.address, gameIndex);
 
       expect(game.p2).to.equal(p2.address);
-      expect(game.p2).to.equal(p2.address);
-      expect(game.p2Choice).to.equal(p2Choice);
+      expect(game.p2ClearChoice).to.equal(CHOICES.PAPER);
     });
 
     it('Reverts on too low of an entryFee', async function () {
       const { prsMock, p1, entryFee } = await setupGame();
       const [_, p2] = await ethers.getSigners();
-      const p2Choice = CHOICES.PAPER;
+      const p2Choice = CHOICES.PAPER + '-' + 'test';
+      const p2HashedChoice = ethers.utils.soliditySha256(['string'], [p2Choice]);
       const gameIndex = 0;
       const p2WeiAmount = ethers.utils.parseEther('0.0001');
 
-      await expect(prsMock.connect(p2).joinGame(p1.address, gameIndex, p2Choice, p2WeiAmount))
+      await expect(prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashedChoice, p2WeiAmount))
         .to.be.revertedWithCustomError(prsMock, ERRORS.AmountTooLow)
         .withArgs(p2WeiAmount, entryFee);
     });
@@ -86,20 +91,22 @@ describe('PRS-main', function () {
       const { prsMock, p1, entryFee } = await setupGame();
       const [_, p2] = await ethers.getSigners();
       const p2Choice = CHOICES.PAPER;
+      const p2HashedChoice = ethers.utils.soliditySha256(['string'], [p2Choice]);
       const gameIndex = 1;
 
-      await expect(prsMock.connect(p2).joinGame(p1.address, gameIndex, p2Choice, entryFee))
+      await expect(prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashedChoice, entryFee))
         .to.be.revertedWithCustomError(prsMock, ERRORS.IndexOutOfBounds)
         .withArgs(gameIndex);
     });
 
     it('Prevents player joining his own game', async function () {
       const { prsMock, p1, entryFee } = await setupGame();
-      const p1Choice = CHOICES.PAPER;
+      const p1Choice = CHOICES.PAPER + '-test';
+      const p1HashedChoice = ethers.utils.soliditySha256(['string'], [p1Choice]);
       const gameIndex = 0;
       // Need enough to join twice
       await p1.sendTransaction({ to: prsMock.address, value: ethers.utils.parseEther('5') });
-      await expect(prsMock.connect(p1).joinGame(p1.address, gameIndex, p1Choice, entryFee))
+      await expect(prsMock.connect(p1).joinGame(p1.address, gameIndex, p1HashedChoice, entryFee))
         .to.be.revertedWithCustomError(prsMock, ERRORS.CannotJoinGame)
         .withArgs(false, true);
     });
@@ -107,14 +114,18 @@ describe('PRS-main', function () {
     it('Reverts if game already has a second player', async function () {
       const { prsMock, p1, entryFee } = await setupGame();
       const [_, p2, p3] = await ethers.getSigners();
-      const p2Choice = CHOICES.PAPER;
-      const p3Choice = CHOICES.ROCK;
+      const p2Choice = CHOICES.PAPER + '-' + 'test';
+      const p2HashedChoice = ethers.utils.soliditySha256(['string'], [p2Choice]);
+
+      const p3Choice = CHOICES.ROCK + '-' + 'test';
+      const p3HashedChoice = ethers.utils.soliditySha256(['string'], [p3Choice]);
+
       const gameIndex = 0;
 
-      await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2Choice, entryFee);
+      await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashedChoice, entryFee);
 
       await p3.sendTransaction({ to: prsMock.address, value: ethers.utils.parseEther('1') });
-      await expect(prsMock.connect(p3).joinGame(p1.address, gameIndex, p3Choice, entryFee))
+      await expect(prsMock.connect(p3).joinGame(p1.address, gameIndex, p3HashedChoice, entryFee))
         .to.be.revertedWithCustomError(prsMock, ERRORS.CannotJoinGame)
         .withArgs(true, false);
     });
