@@ -70,6 +70,8 @@ contract PRS is Ownable, Pausable, TaxableGame {
 
         uint256 entryFee;
         uint256 timerStart;
+
+        bool resolved;
     }
 
     mapping(address => Game[]) Games;
@@ -191,19 +193,24 @@ contract PRS is Ownable, Pausable, TaxableGame {
     }
 
     function resolveGame(address p1, uint256 gameId) public whenNotPaused {
-        Game[] memory games = Games[p1];
+        Game[] storage games = Games[p1];
         if (games.length <= gameId) revert Errors.IndexOutOfBounds(gameId);
 
-        Game memory game = games[gameId];
+        Game storage game = games[gameId];
         if (game.p2 == address(0)) revert Errors.NoSecondPlayer();
+        if (game.resolved) revert Errors.NotResolvable(false, false, false, true);
 
         bool isTimerRunning = !_didTimerRunOut(game.timerStart);
         bool isP1ChoiceNone = game.p1ClearChoice == Choices.NONE;
         bool isP2ChoiceNone = game.p2ClearChoice == Choices.NONE;
 
         // @notice Game is not resolvable is timer is still running and both players have not revealed their move
-        if (isTimerRunning && (isP2ChoiceNone || isP1ChoiceNone)) revert Errors.NotResolvable(isTimerRunning, isP1ChoiceNone, isP2ChoiceNone);
+        if (isTimerRunning && (isP2ChoiceNone || isP1ChoiceNone)) revert Errors.NotResolvable(isTimerRunning, isP1ChoiceNone, isP2ChoiceNone, false);
         uint256 entryFee = game.entryFee * 2;
+
+        // @notice Set to false before we payout
+        // no re-entrancy
+        game.resolved = true;
 
         // @notice If we are here that means both players revealed their move
         // If both revealed their move in time we can choose a winner
