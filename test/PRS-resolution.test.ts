@@ -145,36 +145,19 @@ describe('PRS-resolution', function () {
       await expect(p1EndBal).to.be.approximately(expectedP1Bal, parseEther('0.001'));
     });
 
-    it('No one reveals, no one wins!', async function () {
-      // Non-standard game setup with 5 eth
-      const newEntryFee = '5';
-      const { entryFee, gameIndex, p1, p2, prsMock, clearChoice } = await setupGame(newEntryFee);
+    it('Should prevent a game from being resolved and paid multiple times', async function() {
+      const { clearChoice, entryFee, gameIndex, p1, p2, prsMock } = await setupGame();
+      const [p2ChoicePw, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
 
-      // This choice should make p2 a loser
-      const [, p2HashChoice] = clearAndHashChoice(CHOICES.ROCK);
       await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
-      await prsMock.connect(p1).revealChoice(p1.address, gameIndex, clearChoice);
+      await prsMock.connect(p1).revealChoice(p1.address, 0, clearChoice);
+      await prsMock.connect(p2).revealChoice(p1.address, 0, p2ChoicePw);
 
-      // P2 does not reveal their move within allotted time
-      const revealTimeout = await prsMock.revealTimeout();
-      await network.provider.send('evm_increaseTime', [revealTimeout.toNumber()]);
-      await network.provider.send('evm_mine');
-
-      // P1 still claims victory so P2 can't grief
-      await prsMock.connect(p1).resolveGame(p1.address, gameIndex);
-
-      const p1EndBal = await prsMock.balanceOf(p1.address);
-      const bigIntNewEntryFee = parseEther(newEntryFee);
-      const TAX = await prsMock.taxPercent();
-      const totalTax = bigIntNewEntryFee.mul(2).div(100).mul(TAX);
-      const expectedP1Bal = bigIntNewEntryFee.mul(2).sub(totalTax);
-
-      // console.log(ethers.utils.formatEther(totalTax));
-      // console.log(ethers.utils.formatEther(expectedP2Bal));
-
-      await expect(p1EndBal).to.be.approximately(expectedP1Bal, parseEther('0.001'));
+      await prsMock.connect(p1).resolveGame(p1.address, 0);
+      await expect(prsMock.connect(p1).resolveGame(p1.address, 0)).to.revertedWithCustomError(
+        prsMock,
+        ERRORS.NotResolvable
+      ).withArgs(false, false, false, true);
     });
-
-    it('Should prevent a game from being resolved and paid multiple times');
   });
 });
