@@ -8,7 +8,7 @@
   "error NoActiveTimer()",
   "error NoSecondPlayer()",
   "error NotEnoughMoneyInContract(uint256,uint256)",
-  "error NotResolvable(bool,bool,bool)",
+  "error NotResolvable(bool,bool,bool,bool)",
   "error NotSecondPlayer(address,address)",
   "error PlayerBalanceNotEnough(uint256,uint256)",
   "error TimerFinished()",
