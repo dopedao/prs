@@ -27,7 +27,7 @@ describe('PRS-main', function () {
   describe('startGame', function () {
     it('Creates a game', async function () {
       const { prsMock, p1 } = await deployPrs();
-      const [_, hashedChoice] = clearAndHashChoice(CHOICES.PAPER)
+      const [, hashedChoice] = clearAndHashChoice(CHOICES.PAPER)
 
       const weiAmount = ethers.utils.parseEther('0.1');
       await p1.sendTransaction({ to: prsMock.address, value: weiAmount });
@@ -40,7 +40,7 @@ describe('PRS-main', function () {
 
     it('Reverts on entryFee below minimum', async function () {
       const { prsMock, p1 } = await setupGame();
-      const [_, hashedChoice] = clearAndHashChoice(CHOICES.PAPER)
+      const [, hashedChoice] = clearAndHashChoice(CHOICES.PAPER)
 
       const minEntryFee = await prsMock.minEntryFee();
       const weiAmount = ethers.BigNumber.from('900000000000000'); /* 0.09 Eth */
@@ -54,7 +54,7 @@ describe('PRS-main', function () {
   describe('joinGame', function () {
     it('Allows p2 to join the game', async function () {
       const { prsMock, p1, entryFee } = await setupGame();
-      const [_, p2] = await ethers.getSigners();
+      const [, p2] = await ethers.getSigners();
       const [p2ClearChoice, p2HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
       const gameIndex = 0;
 
@@ -70,8 +70,8 @@ describe('PRS-main', function () {
 
     it('Reverts on too low of an entryFee', async function () {
       const { prsMock, p1, entryFee } = await setupGame();
-      const [_, p2] = await ethers.getSigners();
-      const [__, p2HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
+      const [, p2] = await ethers.getSigners();
+      const [, p2HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
       const gameIndex = 0;
       const p2WeiAmount = ethers.utils.parseEther('0.0001');
 
@@ -82,8 +82,8 @@ describe('PRS-main', function () {
 
     it('Reverts on index out of bounds p2', async function () {
       const { prsMock, p1, entryFee } = await setupGame();
-      const [_, p2] = await ethers.getSigners();
-      const [__, p2HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
+      const [, p2] = await ethers.getSigners();
+      const [, p2HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
       const gameIndex = 1;
 
       await expect(prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashedChoice, entryFee))
@@ -93,7 +93,7 @@ describe('PRS-main', function () {
 
     it('Prevents player joining his own game', async function () {
       const { prsMock, p1, entryFee } = await setupGame();
-      const [__, p1HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
+      const [, p1HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
       const gameIndex = 0;
       // Need enough to join twice
       await p1.sendTransaction({ to: prsMock.address, value: ethers.utils.parseEther('5') });
@@ -104,9 +104,9 @@ describe('PRS-main', function () {
 
     it('Reverts if game already has a second player', async function () {
       const { prsMock, p1, entryFee } = await setupGame();
-      const [_, p2, p3] = await ethers.getSigners();
-      const [__, p2HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
-      const [___, p3HashedChoice] = clearAndHashChoice(CHOICES.ROCK);
+      const [, p2, p3] = await ethers.getSigners();
+      const [, p2HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
+      const [, p3HashedChoice] = clearAndHashChoice(CHOICES.ROCK);
 
       const gameIndex = 0;
 
