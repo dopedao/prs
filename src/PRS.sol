@@ -190,7 +190,7 @@ contract PRS is Ownable, Pausable, TaxableGame {
         }
     }
 
-    function resolveGame(address p1, uint256 gameId) public {
+    function resolveGame(address p1, uint256 gameId) public whenNotPaused {
         Game[] memory games = Games[p1];
         if (games.length <= gameId) revert Errors.IndexOutOfBounds(gameId);
 
