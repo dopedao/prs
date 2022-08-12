@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/utils/Address.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
+import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
 import { Errors } from "./Errors.sol";
 import { TaxableGame } from "./TaxableGame.sol";
 
@@ -50,6 +51,8 @@ contract PRS is Ownable, Pausable, TaxableGame {
     // @notice Both players have 12 hours to reveal their move
     // if one of them fails to do so the other can take the pot
     uint256 public revealTimeout = 12 hours;
+    using Counters for Counters.Counter;
+    Counters.Counter private _games;
 
     enum Choices {
         NONE,
@@ -66,6 +69,7 @@ contract PRS is Ownable, Pausable, TaxableGame {
         Choices p1ClearChoice;
         Choices p2ClearChoice;
 
+        address p1;
         address p2;
 
         uint256 entryFee;
@@ -74,7 +78,7 @@ contract PRS is Ownable, Pausable, TaxableGame {
         bool resolved;
     }
 
-    mapping(address => Game[]) Games;
+    mapping(uint256 => Game) Games;
 
     event CreatedGame(address indexed, uint256, uint256);
     event JoinedGameOf(address indexed, address indexed, uint256, uint256, uint256);
@@ -87,29 +91,24 @@ contract PRS is Ownable, Pausable, TaxableGame {
 
     // @notice Returns a single game for Player 1
     // @return Game struct 
-    function getGame(address player, uint256 gameId) public view returns (Game memory) {
-        Game[] storage games = Games[player];
-        if (games.length <= gameId) revert Errors.IndexOutOfBounds(gameId);
+    function getGame(uint256 gameId) public view returns (Game memory) {
+        Game storage game = Games[gameId];
+        if (game.p1 == address(0)) revert Errors.IndexOutOfBounds(gameId);
 
-        return games[gameId];
-    }
-
-    // @notice Returns all games that an address is Player 1 for.
-    function listGamesFor(address player) public view returns (Game[] memory) {
-        return Games[player];
+        return game;
     }
 
     // @notice Return time left after Player 2 has revealed their move.
-    function getTimeLeft(address player, uint256 gameId) public view returns (uint256) {
-        Game memory game = getGame(player, gameId);
+    function getTimeLeft(uint256 gameId) public view returns (uint256) {
+        Game memory game = getGame(gameId);
         if (_didTimerRunOut(game.timerStart)) revert Errors.TimerFinished();
         if (game.p2 == address(0)) revert Errors.NoActiveTimer();
         return revealTimeout - (block.timestamp - game.timerStart);
     }
 
     // @notice Return entry fee for a game being played.
-    function getGameEntryFee(address player, uint256 gameId) public view returns (uint256) {
-        Game memory game = getGame(player, gameId);
+    function getGameEntryFee(uint256 gameId) public view returns (uint256) {
+        Game memory game = getGame(gameId);
         return game.entryFee;
     }
 
@@ -135,28 +134,32 @@ contract PRS is Ownable, Pausable, TaxableGame {
         checkAddressHasSufficientBalance(entryFee)
         whenNotPaused
     {
-        Game memory game;
+        Game storage game = Games[_games.current()];
+        _games.increment();
+
+        game.p1 = msg.sender;
         game.entryFee = entryFee;
         game.p1SaltedChoice = encChoice;
 
-        Games[msg.sender].push(game);
         _subtractFromBalance(msg.sender, entryFee);
         emit CreatedGame(msg.sender, entryFee, block.timestamp);
     }
 
     // @notice Allows p2 to join an existing game by gameId
     function joinGame(
-        address p1,
         uint256 gameId,
         bytes32 p2SaltedChoice,
         uint256 entryFee
-    ) public checkAddressHasSufficientBalance(entryFee) whenNotPaused {
-        if (p1 == msg.sender) revert Errors.CannotJoinGame(false, true);
+    )
+    public
+    checkAddressHasSufficientBalance(entryFee)
+    whenNotPaused
+    {
+        Game storage game = Games[gameId];
+        address player1 = game.p1;
 
-        Game[] storage games = Games[p1];
-        if (games.length <= gameId) revert Errors.IndexOutOfBounds(gameId);
-
-        Game storage game = games[gameId];
+        if (player1 == address(0)) revert Errors.IndexOutOfBounds(gameId);
+        if (player1 == msg.sender) revert Errors.CannotJoinGame(false, true);
         if (game.p2 != address(0)) revert Errors.CannotJoinGame(true, false);
         if (entryFee < game.entryFee) revert Errors.AmountTooLow(entryFee, game.entryFee);
 
@@ -165,38 +168,43 @@ contract PRS is Ownable, Pausable, TaxableGame {
         game.timerStart = block.timestamp;
 
         _subtractFromBalance(msg.sender, entryFee);
-        emit JoinedGameOf(msg.sender, p1, gameId, entryFee, block.timestamp);
+        emit JoinedGameOf(msg.sender, player1, gameId, entryFee, block.timestamp);
     }
 
     /* ========================================================================================= */
     // Reveal / Resolve
     /* ========================================================================================= */
 
-    function revealChoice(address p1, uint256 gameId, string calldata movePw) public whenNotPaused {
-        Game[] storage games = Games[p1];
-        if (games.length <= gameId) revert Errors.IndexOutOfBounds(gameId);
+    function revealChoice(uint256 gameId, string calldata movePw) 
+    public 
+    whenNotPaused
+    {
+        Game storage game = Games[gameId];
+        address player1 = game.p1;
+        address player2 = game.p2;
 
-        Game storage game = games[gameId];
-        if (game.p2 == address(0)) revert Errors.NoSecondPlayer();
+        if (player1 == address(0)) revert Errors.IndexOutOfBounds(gameId);
+        if (player2 == address(0)) revert Errors.NoSecondPlayer();
 
-        if (msg.sender == p1) {
+        if (msg.sender == player1) {
             if (game.p1ClearChoice != Choices.NONE) revert Errors.AlreadyRevealed(msg.sender, gameId);
             game.p1ClearChoice = _getHashChoice(game.p1SaltedChoice, movePw);
             return;
         }
 
-        if (msg.sender == game.p2) {
+        if (msg.sender == player2) {
             if (game.p2ClearChoice != Choices.NONE) revert Errors.AlreadyRevealed(msg.sender, gameId);
             game.p2ClearChoice = _getHashChoice(game.p2SaltedChoice, movePw);
             return;
         }
     }
 
-    function resolveGame(address p1, uint256 gameId) public whenNotPaused {
-        Game[] storage games = Games[p1];
-        if (games.length <= gameId) revert Errors.IndexOutOfBounds(gameId);
-
-        Game storage game = games[gameId];
+    function resolveGame(uint256 gameId) 
+    public
+    whenNotPaused
+    {
+        Game storage game = Games[gameId];
+        if (game.p1 == address(0)) revert Errors.IndexOutOfBounds(gameId);
         if (game.p2 == address(0)) revert Errors.NoSecondPlayer();
         if (game.resolved) revert Errors.NotResolvable(false, false, false, true);
 
@@ -216,13 +224,13 @@ contract PRS is Ownable, Pausable, TaxableGame {
         // @notice If we are here that means both players revealed their move.
         //         If both revealed their move in time we can choose a winner.
         if (isTimerRunning) {
-            _chooseWinner(game.p1ClearChoice, game.p2ClearChoice, p1, game.p2, gameBalance);
+            _chooseWinner(game.p1ClearChoice, game.p2ClearChoice, game.p1, game.p2, gameBalance);
             return;
         }
 
         // @notice Timer ran out and only p2 did not reveal
         if (!isTimerRunning && !isP1ChoiceNone && isP2ChoiceNone) {
-            _payout(p1, gameBalance);
+            _payout(game.p1, gameBalance);
             return;
         }
 

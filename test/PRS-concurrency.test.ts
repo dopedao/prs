@@ -52,23 +52,23 @@ describe('PRS-concurrency', function () {
       }
 
       for (let i = 0; i < numGames; i++) {
-        await this.prsMock.connect(this.p2).joinGame(this.p1.address, i, hashedP2Choice, entryFeeEth);
+        await this.prsMock.connect(this.p2).joinGame(i, hashedP2Choice, entryFeeEth);
       }
 
       // p1 reveals choice
       for (let i = 0; i < numGames; i++) {
-        await this.prsMock.connect(this.p1).revealChoice(this.p1.address, i, clearChoice);
+        await this.prsMock.connect(this.p1).revealChoice(i, clearChoice);
       }
 
       // p2 reveals chocie
       for (let i = 0; i < numGames; i++) {
-        await this.prsMock.connect(this.p2).revealChoice(this.p1.address, i, p2ClearChoice);
+        await this.prsMock.connect(this.p2).revealChoice(i, p2ClearChoice);
       }
 
       // p2 wins every time
       for (let i = 0; i < numGames; i++) {
         expect(await this.prsMock.connect(this.p1).
-          resolveGame(this.p1.address, i)
+          resolveGame(i)
         ).to.not.be.reverted;
       }
 

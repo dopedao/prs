@@ -5,16 +5,16 @@ import { ERRORS, CHOICES } from './lib/constants';
 import { clearAndHashChoice, deployPrs, setupGame } from './lib/helpers';
 
 describe('PRS-resolution', function () {
-  describe('resolveGameP1', function () {
+  describe('resolveGame as p1', function () {
     it('Should revert on index out of bounds', async function () {
       const { clearChoice, entryFee, gameIndex, hashedChoice, p1, p2, prsMock } = await setupGame();
       const [, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
 
-      await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
+      await prsMock.connect(p2).joinGame(gameIndex, p2HashChoice, entryFee);
 
       const outOfBoundsIndex = 1;
 
-      await expect(prsMock.connect(p1).resolveGame(p1.address, outOfBoundsIndex))
+      await expect(prsMock.connect(p1).resolveGame(outOfBoundsIndex))
         .to.be.revertedWithCustomError(prsMock, ERRORS.IndexOutOfBounds)
         .withArgs(outOfBoundsIndex);
     });
@@ -22,7 +22,7 @@ describe('PRS-resolution', function () {
     it('Should revert if game does not have a second player', async function () {
       const { prsMock, p1, clearChoice } = await setupGame();
 
-      await expect(prsMock.connect(p1).resolveGame(p1.address, 0)).to.be.revertedWithCustomError(
+      await expect(prsMock.connect(p1).resolveGame(0)).to.be.revertedWithCustomError(
         prsMock,
         ERRORS.NoSecondPlayer,
       );
@@ -32,32 +32,32 @@ describe('PRS-resolution', function () {
       const { clearChoice, entryFee, gameIndex, p1, p2, prsMock } = await setupGame();
       const [p2ChoicePw, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
 
-      await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
-      await prsMock.connect(p1).revealChoice(p1.address, 0, clearChoice);
-      await prsMock.connect(p2).revealChoice(p1.address, 0, p2ChoicePw);
+      await prsMock.connect(p2).joinGame(gameIndex, p2HashChoice, entryFee);
+      await prsMock.connect(p1).revealChoice(0, clearChoice);
+      await prsMock.connect(p2).revealChoice(0, p2ChoicePw);
 
-      await expect(await prsMock.connect(p1).resolveGame(p1.address, 0)).to.not.reverted;
+      await expect(await prsMock.connect(p1).resolveGame(0)).to.not.reverted;
     });
 
     it("Shouldn't let p1 resolve the game if doesn't have one", async function () {
       const { prsMock, p1 } = await deployPrs();
       const gameIndex = 0;
 
-      await expect(prsMock.connect(p1).resolveGame(p1.address, 0))
+      await expect(prsMock.connect(p1).resolveGame(0))
         .to.be.revertedWithCustomError(prsMock, ERRORS.IndexOutOfBounds)
         .withArgs(gameIndex);
     });
   });
 
-  describe('resolveGame', function () {
+  describe('resolveGame as p2', function () {
     it("Shouldn't let p2 resolve the game if timer is still running", async function () {
       const { entryFee, gameIndex, p1, p2, prsMock } = await setupGame();
       const [, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
 
-      await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
+      await prsMock.connect(p2).joinGame(gameIndex, p2HashChoice, entryFee);
 
       await expect(
-        prsMock.connect(p2).resolveGame(p1.address, gameIndex),
+        prsMock.connect(p2).resolveGame(gameIndex),
       ).to.revertedWithCustomError(prsMock, ERRORS.NotResolvable);
     });
 
@@ -66,7 +66,7 @@ describe('PRS-resolution', function () {
       const [someRando] = await ethers.getSigners();
 
       await expect(
-        prsMock.connect(someRando).resolveGame(p1.address, gameIndex),
+        prsMock.connect(someRando).resolveGame(gameIndex),
       ).to.revertedWithCustomError(prsMock, ERRORS.NoSecondPlayer);
     });
 
@@ -74,12 +74,12 @@ describe('PRS-resolution', function () {
       const { clearChoice, entryFee, gameIndex, p1, p2, prsMock } = await setupGame();
       const [p2ChoicePw, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
 
-      await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
+      await prsMock.connect(p2).joinGame(gameIndex, p2HashChoice, entryFee);
 
-      await prsMock.connect(p1).revealChoice(p1.address, gameIndex, clearChoice);
-      await prsMock.connect(p2).revealChoice(p1.address, gameIndex, p2ChoicePw);
+      await prsMock.connect(p1).revealChoice(gameIndex, clearChoice);
+      await prsMock.connect(p2).revealChoice(gameIndex, p2ChoicePw);
 
-      await prsMock.connect(p1).resolveGame(p1.address, gameIndex);
+      await prsMock.connect(p1).resolveGame(gameIndex);
 
       // const game = await prsMock.connect(p1).getGame(p1.address, gameIndex);
       // Game is a tie
@@ -92,8 +92,8 @@ describe('PRS-resolution', function () {
 
       // This choice should make p2 a loser
       const [p2ChoicePw, p2HashChoice] = clearAndHashChoice(CHOICES.ROCK);
-      await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
-      await prsMock.connect(p2).revealChoice(p1.address, gameIndex, p2ChoicePw);
+      await prsMock.connect(p2).joinGame(gameIndex, p2HashChoice, entryFee);
+      await prsMock.connect(p2).revealChoice(gameIndex, p2ChoicePw);
 
       // P1 does not reveal their move within allotted time
       const revealTimeout = await prsMock.revealTimeout();
@@ -101,7 +101,7 @@ describe('PRS-resolution', function () {
       await network.provider.send('evm_mine');
 
       // P2 still claims victory so P1 can't grief
-      await prsMock.connect(p2).resolveGame(p1.address, gameIndex);
+      await prsMock.connect(p2).resolveGame(gameIndex);
 
       const p2EndBal = await prsMock.balanceOf(p2.address);
       const bigIntNewEntryFee = parseEther(newEntryFee);
@@ -122,8 +122,8 @@ describe('PRS-resolution', function () {
 
       // This choice should make p2 a loser
       const [, p2HashChoice] = clearAndHashChoice(CHOICES.ROCK);
-      await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
-      await prsMock.connect(p1).revealChoice(p1.address, gameIndex, clearChoice);
+      await prsMock.connect(p2).joinGame(gameIndex, p2HashChoice, entryFee);
+      await prsMock.connect(p1).revealChoice(gameIndex, clearChoice);
 
       // P2 does not reveal their move within allotted time
       const revealTimeout = await prsMock.revealTimeout();
@@ -131,7 +131,7 @@ describe('PRS-resolution', function () {
       await network.provider.send('evm_mine');
 
       // P1 still claims victory so P2 can't grief
-      await prsMock.connect(p1).resolveGame(p1.address, gameIndex);
+      await prsMock.connect(p1).resolveGame(gameIndex);
 
       const p1EndBal = await prsMock.balanceOf(p1.address);
       const bigIntNewEntryFee = parseEther(newEntryFee);
@@ -149,12 +149,12 @@ describe('PRS-resolution', function () {
       const { clearChoice, entryFee, gameIndex, p1, p2, prsMock } = await setupGame();
       const [p2ChoicePw, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
 
-      await prsMock.connect(p2).joinGame(p1.address, gameIndex, p2HashChoice, entryFee);
-      await prsMock.connect(p1).revealChoice(p1.address, 0, clearChoice);
-      await prsMock.connect(p2).revealChoice(p1.address, 0, p2ChoicePw);
+      await prsMock.connect(p2).joinGame(gameIndex, p2HashChoice, entryFee);
+      await prsMock.connect(p1).revealChoice(0, clearChoice);
+      await prsMock.connect(p2).revealChoice(0, p2ChoicePw);
 
-      await prsMock.connect(p1).resolveGame(p1.address, 0);
-      await expect(prsMock.connect(p1).resolveGame(p1.address, 0)).to.revertedWithCustomError(
+      await prsMock.connect(p1).resolveGame(0);
+      await expect(prsMock.connect(p1).resolveGame(0)).to.revertedWithCustomError(
         prsMock,
         ERRORS.NotResolvable
       ).withArgs(false, false, false, true);
