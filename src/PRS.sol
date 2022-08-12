@@ -224,13 +224,13 @@ contract PRS is Ownable, Pausable, TaxableGame {
         // @notice If we are here that means both players revealed their move.
         //         If both revealed their move in time we can choose a winner.
         if (isTimerRunning) {
-            _chooseWinner(game.p1ClearChoice, game.p2ClearChoice, game.p1, game.p2, entryFee);
+            _chooseWinner(game.p1ClearChoice, game.p2ClearChoice, game.p1, game.p2, gameBalance);
             return;
         }
 
         // @notice Timer ran out and only p2 did not reveal
         if (!isTimerRunning && !isP1ChoiceNone && isP2ChoiceNone) {
-            _payout(p1, gameBalance);
+            _payout(game.p1, gameBalance);
             return;
         }
 
