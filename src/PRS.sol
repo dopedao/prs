@@ -140,7 +140,6 @@ contract PRS is Ownable, Pausable, TaxableGame {
         game.p1 = msg.sender;
         game.entryFee = entryFee;
         game.p1SaltedChoice = encChoice;
-        game.resolved = false;
 
         _subtractFromBalance(msg.sender, entryFee);
         emit CreatedGame(msg.sender, entryFee, block.timestamp);
