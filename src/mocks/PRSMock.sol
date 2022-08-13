@@ -4,7 +4,8 @@ pragma solidity ^0.8.9;
 import { PRS } from "../PRS.sol";
 
 contract PRSMock is PRS {
-
+    constructor() PRS() {
+    }
 
     function unsafeChooseWinner(
         Choices p1Choice,

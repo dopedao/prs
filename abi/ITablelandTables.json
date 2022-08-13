@@ -1,0 +1,16 @@
+[
+  "error MaxQuerySizeExceeded(uint256,uint256)",
+  "error Unauthorized()",
+  "event CreateTable(address,uint256,string)",
+  "event RunSQL(address,bool,uint256,string,tuple(bool,bool,bool,string,string,string[]))",
+  "event SetController(uint256,address)",
+  "event TransferTable(address,address,uint256)",
+  "function createTable(address,string) payable returns (uint256)",
+  "function getController(uint256) returns (address)",
+  "function lockController(address,uint256)",
+  "function pause()",
+  "function runSQL(address,uint256,string) payable",
+  "function setBaseURI(string)",
+  "function setController(address,uint256,address)",
+  "function unpause()"
+]

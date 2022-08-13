@@ -5,8 +5,10 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Errors } from "./Errors.sol";
 import { TaxableGame } from "./TaxableGame.sol";
+import { ITablelandTables } from "@tableland/evm/contracts/ITablelandTables.sol";
 
 //                                       .::^^^^::..
 //                              .:^!?YPG##&&$$$$$&&#BP5J7~:
@@ -46,19 +48,11 @@ import { TaxableGame } from "./TaxableGame.sol";
 //                                ..::::::::...
 //
 
-
-
 /// @title PAPER, ROCK, SCISSORS
 /// @author DOPE DAO
-/// @notice A competitive, token-based, on-chain game of skill that persists results to 
+/// @notice A competitive, token-based, on-chain game of skill that persists results to
 ///         a public leaderboard stored in tableland.
-contract PRS is Ownable, Pausable, TaxableGame {
-    /// @notice Both players have 12 hours to reveal their move.
-    ///         If one of them fails to do so the other can take the pot.
-    uint256 public revealTimeout = 12 hours;
-    using Counters for Counters.Counter;
-    Counters.Counter private _games;
-
+contract PRS is Ownable(), Pausable(), TaxableGame {
     enum Choices {
         NONE,
         ROCK,
@@ -79,12 +73,27 @@ contract PRS is Ownable, Pausable, TaxableGame {
         bool resolved;
     }
 
+    /// Both players have 12 hours to reveal their move.
+    /// If one of them fails to do so the other can take the pot.
+    uint256 public revealTimeout = 12 hours;
+    using Counters for Counters.Counter;
+    Counters.Counter private _games;
     mapping(uint256 => Game) Games;
+
+    ITablelandTables private _tableland;
+    uint256 private _gameTableId;
+    string private _gameTable;
+    string private _tablePrefix = "prs";
 
     event CreatedGame(address indexed, uint256, uint256);
     event JoinedGameOf(address indexed, address indexed, uint256, uint256, uint256);
     event WonGameAgainst(address indexed, Choices, address indexed, Choices, uint256, uint256);
     event GameDraw(address indexed, Choices, address indexed, Choices, uint256, uint256);
+
+    /// Create tableland schema for our leaderboard.
+    constructor() {
+        // _createTable(registry);
+    }
 
     function setRevealTimeout(uint256 newTimeout) public onlyOwner {
         revealTimeout = newTimeout;
@@ -209,7 +218,7 @@ contract PRS is Ownable, Pausable, TaxableGame {
     // Resolve
     /* ========================================================================================= */
 
-    /// @dev Game is not resolvable if timer is still running and both players 
+    /// @dev Game is not resolvable if timer is still running and both players
     ///      have not revealed their move.
     function resolveGame(uint256 gameId) public whenNotPaused {
         Game storage game = Games[gameId];
@@ -318,5 +327,46 @@ contract PRS is Ownable, Pausable, TaxableGame {
         }
 
         return Choices.INVALID;
+    }
+
+    /// Initializes Tableland table to store record of games played.
+    /// @dev Abstracted out to a function so inherited contract can call this for testing.
+    function _createTable(address registry) internal {
+        // /// @dev The tableland address on our current chain
+        // _tableland = ITablelandTables(registry);
+
+        // /// @dev See tableland docs for more info
+        // string memory tableColumns = "("
+        // "game_id INTEGER UNIQUE, "
+        // "created_at_timestamp INTEGER, "
+        // "game_entry_fee INTEGER, "
+        // "player_1 TEXT, "
+        // "player_2 TEXT, "
+        // "winner TEXT, "
+        // "player_1_move INTEGER, "
+        // "player_2_move INTEGER "
+        // ");";
+
+        // /// @dev Stores unique ID for our created table
+        // _gameTableId = _tableland.createTable(
+        //     address(this),
+        //     string.concat(
+        //         "CREATE TABLE",
+        //         _tablePrefix,
+        //         "_",
+        //         Strings.toString(block.chainid),
+        //         " ",
+        //         tableColumns
+        //     )
+        // );
+
+        // /// @dev Stores full table name for new table.
+        // _gameTable = string.concat(
+        //     _tablePrefix,
+        //     "_",
+        //     Strings.toString(block.chainid),
+        //     "_",
+        //     Strings.toString(_gameTableId)
+        // );
     }
 }
