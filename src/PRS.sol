@@ -91,8 +91,10 @@ contract PRS is Ownable(), Pausable(), TaxableGame {
     event GameDraw(address indexed, Choices, address indexed, Choices, uint256, uint256);
 
     /// Create tableland schema for our leaderboard.
-    constructor() {
-        // _createTable(registry);
+    /// @param tablelandRegistry Address of the "tableland registry" on the chain this will be deployed on
+    /// @dev Find the list of tableland registries here https://docs.tableland.xyz/limits-and-deployed-contracts#ae3cfc1cfd2941bfa401580aa1e05c5e
+    constructor(address tablelandRegistry) {
+        _createTable(tablelandRegistry);
     }
 
     function setRevealTimeout(uint256 newTimeout) public onlyOwner {
@@ -330,10 +332,10 @@ contract PRS is Ownable(), Pausable(), TaxableGame {
     }
 
     /// Initializes Tableland table to store record of games played.
+    /// @param tablelandRegistry Address of the "tableland registry" on the chain this will be deployed on
     /// @dev Abstracted out to a function so inherited contract can call this for testing.
-    function _createTable(address registry) internal {
-        // /// @dev The tableland address on our current chain
-        // _tableland = ITablelandTables(registry);
+    function _createTable(address tablelandRegistry) internal {
+        // _tableland = ITablelandTables(tablelandRegistry);
 
         // /// @dev See tableland docs for more info
         // string memory tableColumns = "("

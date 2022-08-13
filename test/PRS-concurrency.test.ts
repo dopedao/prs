@@ -4,13 +4,15 @@ import { parseEther, formatEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { CHOICES } from './lib/constants';
 import { getRandomNumber } from './lib/utils';
+import { deployPrs } from './lib/helpers';
 
 describe('PRS-concurrency', function () {
   describe('Concurrency Tests', function () {
     beforeEach(async function () {
-      [this.p1, this.p2] = await ethers.getSigners();
-      const PRSMock = await ethers.getContractFactory('PRSMock');
-      this.prsMock = await PRSMock.deploy();
+      const { prsMock, p1, p2 } = await deployPrs();
+      this.prsMock = prsMock;
+      this.p1 = p1;
+      this.p2 = p2;
     });
 
     it('Should allow multiple games', async function () {

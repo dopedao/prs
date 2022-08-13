@@ -1,5 +1,5 @@
 [
-  "constructor()",
+  "constructor(address)",
   "error AlreadyRevealed(address,uint256)",
   "error AmountTooLow(uint256,uint256)",
   "error CannotJoinGame(bool,bool)",

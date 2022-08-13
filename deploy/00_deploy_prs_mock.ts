@@ -9,7 +9,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy('PRS', {
+  await deploy('PRSMock', {
     from: deployer,
     // Pass constructor arguments
     args: [proxies["ethereum-goerli"]],
@@ -20,4 +20,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   });
 };
 export default func;
-func.tags = ['PRS'];
+func.tags = ['PRSMock'];
