@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/utils/Address.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
@@ -339,14 +339,14 @@ contract PRS is Ownable(), Pausable(), TaxableGame {
 
         // /// @dev See tableland docs for more info
         // string memory tableColumns = "("
-        // "game_id INTEGER UNIQUE, "
-        // "created_at_timestamp INTEGER, "
-        // "game_entry_fee INTEGER, "
-        // "player_1 TEXT, "
-        // "player_2 TEXT, "
-        // "winner TEXT, "
-        // "player_1_move INTEGER, "
-        // "player_2_move INTEGER "
+        //     "game_id INTEGER UNIQUE, "
+        //     "created_at_timestamp INTEGER, "
+        //     "game_entry_fee INTEGER, "
+        //     "player_1 TEXT, "
+        //     "player_2 TEXT, "
+        //     "winner TEXT, "
+        //     "player_1_move INTEGER, "
+        //     "player_2_move INTEGER "
         // ");";
 
         // /// @dev Stores unique ID for our created table
