@@ -8,7 +8,6 @@ import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
 import { Errors } from "./Errors.sol";
 import { TaxableGame } from "./TaxableGame.sol";
 
-
 //                                       .::^^^^::..
 //                              .:^!?YPG##&&$$$$$&&#BP5J7~:
 //                          .!PB#&$$$$$$$$$$$$$$$$$$$$$$$$&BPJ!:
@@ -70,7 +69,7 @@ contract PRS is Ownable, Pausable, TaxableGame {
 
     struct Game {
         bytes32 p1SaltedChoice;
-        bytes32 p2SaltedChoice;
+        bytes32 encChoice;
         Choices p1ClearChoice;
         Choices p2ClearChoice;
         address p1;
@@ -91,7 +90,7 @@ contract PRS is Ownable, Pausable, TaxableGame {
         revealTimeout = newTimeout;
     }
 
-    /// @notice Returns a single game for Player 1
+    /// Returns a single game for Player 1
     /// @return Game struct
     function getGame(uint256 gameId) public view returns (Game memory) {
         Game storage game = Games[gameId];
@@ -100,7 +99,7 @@ contract PRS is Ownable, Pausable, TaxableGame {
         return game;
     }
 
-    /// @notice Return time left after Player 2 has revealed their move.
+    /// Return time left after Player 2 has revealed their move.
     function getTimeLeft(uint256 gameId) public view returns (uint256) {
         Game memory game = getGame(gameId);
         if (_didTimerRunOut(game.timerStart)) revert Errors.TimerFinished();
@@ -108,18 +107,18 @@ contract PRS is Ownable, Pausable, TaxableGame {
         return revealTimeout - (block.timestamp - game.timerStart);
     }
 
-    /// @notice Return entry fee for a game being played.
+    /// @return Entry fee for a game id. 1/2 the "pot"
     function getGameEntryFee(uint256 gameId) public view returns (uint256) {
         Game memory game = getGame(gameId);
         return game.entryFee;
     }
 
-    /// @notice Pause game in case of suspicious activity
+    /// Pause game in case of suspicious activity
     function pauseGame() public onlyOwner {
         _pause();
     }
 
-    /// @notice Unpause game
+    /// Unpause game
     function unpauseGame() public onlyOwner {
         _unpause();
     }
@@ -128,8 +127,12 @@ contract PRS is Ownable, Pausable, TaxableGame {
     // Commit
     /* ========================================================================================= */
 
-    /// @notice Whoever calls this makes a new game and becomes "p1"
-    ///         Player can make multiple games at a time.
+    /// Whoever calls this makes a new game and becomes "p1"
+    /// Requires a sha256 encoded move and password to be stored as
+    /// A player can make multiple games at a time.
+    ///
+    /// @param encChoice sha256 hashed move and password
+    /// @param entryFee The amount of entry fee required for this game.
     function startGame(bytes32 encChoice, uint256 entryFee)
         public
         checkEntryFeeEnough(entryFee)
@@ -147,10 +150,16 @@ contract PRS is Ownable, Pausable, TaxableGame {
         emit CreatedGame(msg.sender, entryFee, block.timestamp);
     }
 
-    /// @notice Allows p2 to join an existing game by gameId
+    /// Allows p2 to join an existing game by gameId
+    /// Requires player to commit their hashed move and password to join.
+    /// Will fail if player does not have high enough balance on contract.
+    ///
+    /// @param gameId ID of game stored in local storage.
+    /// @param encChoice sha256 hashed move and password
+    /// @param entryFee The amount of entry fee required for this game.
     function joinGame(
         uint256 gameId,
-        bytes32 p2SaltedChoice,
+        bytes32 encChoice,
         uint256 entryFee
     ) public checkAddressHasSufficientBalance(entryFee) whenNotPaused {
         Game storage game = Games[gameId];
@@ -162,7 +171,7 @@ contract PRS is Ownable, Pausable, TaxableGame {
         if (entryFee < game.entryFee) revert Errors.AmountTooLow(entryFee, game.entryFee);
 
         game.p2 = msg.sender;
-        game.p2SaltedChoice = p2SaltedChoice;
+        game.encChoice = encChoice;
         game.timerStart = block.timestamp;
 
         _subtractFromBalance(msg.sender, entryFee);
@@ -191,7 +200,7 @@ contract PRS is Ownable, Pausable, TaxableGame {
         if (msg.sender == player2) {
             if (game.p2ClearChoice != Choices.NONE)
                 revert Errors.AlreadyRevealed(msg.sender, gameId);
-            game.p2ClearChoice = _getHashChoice(game.p2SaltedChoice, movePw);
+            game.p2ClearChoice = _getHashChoice(game.encChoice, movePw);
             return;
         }
     }
@@ -200,6 +209,8 @@ contract PRS is Ownable, Pausable, TaxableGame {
     // Resolve
     /* ========================================================================================= */
 
+    /// @dev Game is not resolvable if timer is still running and both players 
+    ///      have not revealed their move.
     function resolveGame(uint256 gameId) public whenNotPaused {
         Game storage game = Games[gameId];
         if (game.p1 == address(0)) revert Errors.IndexOutOfBounds(gameId);
@@ -210,8 +221,6 @@ contract PRS is Ownable, Pausable, TaxableGame {
         bool isP1ChoiceNone = game.p1ClearChoice == Choices.NONE;
         bool isP2ChoiceNone = game.p2ClearChoice == Choices.NONE;
 
-        // Game is not resolvable if timer is still running and both players 
-        // have not revealed their move.
         if (isTimerRunning && (isP2ChoiceNone || isP1ChoiceNone))
             revert Errors.NotResolvable(isTimerRunning, isP1ChoiceNone, isP2ChoiceNone, false);
         uint256 gameBalance = game.entryFee * 2;
@@ -244,8 +253,8 @@ contract PRS is Ownable, Pausable, TaxableGame {
     // Internals
     /* ========================================================================================= */
 
-    /// @notice How PRS chooses a winner when two choices are revealed.
-    ///         Essential that you ZERO OUT ANY GAME BALANCES before calling this.
+    /// How PRS chooses a winner when two choices are revealed.
+    /// @dev Essential that you ZERO OUT ANY GAME BALANCES before calling this.
     function _chooseWinner(
         Choices p1Choice,
         Choices p2Choice,
