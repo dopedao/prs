@@ -1,14 +1,15 @@
 import { expect } from 'chai';
 import { parseEther } from 'ethers/lib/utils';
-import { ethers } from 'hardhat';
 import { CHOICES } from './lib/constants';
 import { clearAndHashChoice } from './lib/helpers';
+import { deployPrs } from './lib/helpers';
 
 describe('PRS-internals', function () {
   beforeEach(async function () {
-    [this.p1, this.p2] = await ethers.getSigners();
-    const PRSMock = await ethers.getContractFactory('PRSMock');
-    this.prsMock = await PRSMock.deploy();
+    const { prsMock, p1, p2 } = await deployPrs();
+    this.prsMock = prsMock;
+    this.p1 = p1;
+    this.p2 = p2;
   });
 
   describe('_getHashChoice', function () {

@@ -5,14 +5,13 @@ import { CHOICES } from './constants';
 // https://github.com/NomicFoundation/hardhat/issues/2980
 export async function deployPrs() {
   await deployments.fixture(['PRSMock']);
-  const PRSMock = await ethers.getContractFactory('PRSMock');
-  const prsMock = await PRSMock.deploy();
+  const prsMock = await ethers.getContract("PRSMock");
   const [p1, p2] = await ethers.getSigners();
   return { prsMock, p1, p2 };
 }
 
 export function clearAndHashChoice(choices: CHOICES) {
-  const clearChoice = choices + '-' + 'freibier';
+  const clearChoice = choices + '-' + 'some-un-hackable-password';
   const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
   return [

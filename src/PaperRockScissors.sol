@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/utils/Address.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
-import { Errors } from "./Errors.sol";
+
 import { TaxableGame } from "./TaxableGame.sol";
+import { PRSLeaderboard } from "./PRSLeaderboard.sol";
+import { Choices, Errors, Game } from "./PRSLibrary.sol";
 
 //                                       .::^^^^::..
 //                              .:^!?YPG##&&$$$$$&&#BP5J7~:
@@ -45,39 +47,18 @@ import { TaxableGame } from "./TaxableGame.sol";
 //                          .^7YPB#&&&$$$&&&&##BG5J7~:
 //                                ..::::::::...
 //
-// @author DOPE DAO
-// @notice This contract is NOT SECURITY AUDITED. Use at your own risk.
-contract PRS is Ownable, Pausable, TaxableGame {
-    // @notice Both players have 12 hours to reveal their move
-    // if one of them fails to do so the other can take the pot
+
+/// A competitive, token-based, on-chain game of skill that persists results
+/// to a public leaderboard stored in tableland.
+///
+/// @title PAPER, ROCK, SCISSORS
+/// @author DOPE DAO
+contract PaperRockScissors is Ownable, Pausable, TaxableGame, PRSLeaderboard {
+    /// Both players have 12 hours to reveal their move.
+    /// If one of them fails to do so the other can take the pot.
     uint256 public revealTimeout = 12 hours;
     using Counters for Counters.Counter;
     Counters.Counter private _games;
-
-    enum Choices {
-        NONE,
-        ROCK,
-        PAPER,
-        SCISSORS,
-        INVALID
-    }
-
-    struct Game {
-        bytes32 p1SaltedChoice;
-        bytes32 p2SaltedChoice;
-
-        Choices p1ClearChoice;
-        Choices p2ClearChoice;
-
-        address p1;
-        address p2;
-
-        uint256 entryFee;
-        uint256 timerStart;
-
-        bool resolved;
-    }
-
     mapping(uint256 => Game) Games;
 
     event CreatedGame(address indexed, uint256, uint256);
@@ -85,12 +66,19 @@ contract PRS is Ownable, Pausable, TaxableGame {
     event WonGameAgainst(address indexed, Choices, address indexed, Choices, uint256, uint256);
     event GameDraw(address indexed, Choices, address indexed, Choices, uint256, uint256);
 
+    /// Create tableland schema for our leaderboard.
+    /// @param tablelandRegistry Address of the "tableland registry" on the chain this will be deployed on
+    /// @dev Find the list of tableland registries here https://docs.tableland.xyz/limits-and-deployed-contracts#ae3cfc1cfd2941bfa401580aa1e05c5e
+    constructor(address tablelandRegistry) {
+        _createTable(tablelandRegistry);
+    }
+
     function setRevealTimeout(uint256 newTimeout) public onlyOwner {
         revealTimeout = newTimeout;
     }
 
-    // @notice Returns a single game for Player 1
-    // @return Game struct 
+    /// @dev Get game by (internal) ID
+    /// @return Game struct
     function getGame(uint256 gameId) public view returns (Game memory) {
         Game storage game = Games[gameId];
         if (game.p1 == address(0)) revert Errors.IndexOutOfBounds(gameId);
@@ -98,7 +86,7 @@ contract PRS is Ownable, Pausable, TaxableGame {
         return game;
     }
 
-    // @notice Return time left after Player 2 has revealed their move.
+    /// Return time left for both players to reveal their move
     function getTimeLeft(uint256 gameId) public view returns (uint256) {
         Game memory game = getGame(gameId);
         if (_didTimerRunOut(game.timerStart)) revert Errors.TimerFinished();
@@ -106,18 +94,16 @@ contract PRS is Ownable, Pausable, TaxableGame {
         return revealTimeout - (block.timestamp - game.timerStart);
     }
 
-    // @notice Return entry fee for a game being played.
+    /// @return Entry fee for a game id. 1/2 the "pot"
     function getGameEntryFee(uint256 gameId) public view returns (uint256) {
         Game memory game = getGame(gameId);
         return game.entryFee;
     }
 
-    // @notice Pause game incase of suspicious activity
     function pauseGame() public onlyOwner {
         _pause();
     }
 
-    // @notice Unpause game
     function unpauseGame() public onlyOwner {
         _unpause();
     }
@@ -126,8 +112,12 @@ contract PRS is Ownable, Pausable, TaxableGame {
     // Commit
     /* ========================================================================================= */
 
-    // @notice Whoever calls this makes a new game and becomes "p1"
-    //         Player can make multiple games at a time.
+    /// Whoever calls this makes a new game and becomes "p1"
+    /// Requires a sha256 encoded move and password to be stored as
+    /// A player can make multiple games at a time.
+    ///
+    /// @param encChoice sha256 hashed move and password
+    /// @param entryFee The amount of entry fee required for this game.
     function startGame(bytes32 encChoice, uint256 entryFee)
         public
         checkEntryFeeEnough(entryFee)
@@ -145,16 +135,18 @@ contract PRS is Ownable, Pausable, TaxableGame {
         emit CreatedGame(msg.sender, entryFee, block.timestamp);
     }
 
-    // @notice Allows p2 to join an existing game by gameId
+    /// Allows p2 to join an existing game by gameId
+    /// Requires player to commit their hashed move and password to join.
+    /// Will fail if player does not have high enough balance on contract.
+    ///
+    /// @param gameId ID of game stored in local storage.
+    /// @param encChoice sha256 hashed move and password
+    /// @param entryFee The amount of entry fee required for this game.
     function joinGame(
         uint256 gameId,
-        bytes32 p2SaltedChoice,
+        bytes32 encChoice,
         uint256 entryFee
-    )
-    public
-    checkAddressHasSufficientBalance(entryFee)
-    whenNotPaused
-    {
+    ) public checkAddressHasSufficientBalance(entryFee) whenNotPaused {
         Game storage game = Games[gameId];
         address player1 = game.p1;
 
@@ -164,7 +156,7 @@ contract PRS is Ownable, Pausable, TaxableGame {
         if (entryFee < game.entryFee) revert Errors.AmountTooLow(entryFee, game.entryFee);
 
         game.p2 = msg.sender;
-        game.p2SaltedChoice = p2SaltedChoice;
+        game.p2SaltedChoice = encChoice;
         game.timerStart = block.timestamp;
 
         _subtractFromBalance(msg.sender, entryFee);
@@ -172,13 +164,10 @@ contract PRS is Ownable, Pausable, TaxableGame {
     }
 
     /* ========================================================================================= */
-    // Reveal / Resolve
+    // Reveal
     /* ========================================================================================= */
 
-    function revealChoice(uint256 gameId, string calldata movePw) 
-    public 
-    whenNotPaused
-    {
+    function revealChoice(uint256 gameId, string calldata movePw) public whenNotPaused {
         Game storage game = Games[gameId];
         address player1 = game.p1;
         address player2 = game.p2;
@@ -187,22 +176,27 @@ contract PRS is Ownable, Pausable, TaxableGame {
         if (player2 == address(0)) revert Errors.NoSecondPlayer();
 
         if (msg.sender == player1) {
-            if (game.p1ClearChoice != Choices.NONE) revert Errors.AlreadyRevealed(msg.sender, gameId);
+            if (game.p1ClearChoice != Choices.NONE)
+                revert Errors.AlreadyRevealed(msg.sender, gameId);
             game.p1ClearChoice = _getHashChoice(game.p1SaltedChoice, movePw);
             return;
         }
 
         if (msg.sender == player2) {
-            if (game.p2ClearChoice != Choices.NONE) revert Errors.AlreadyRevealed(msg.sender, gameId);
+            if (game.p2ClearChoice != Choices.NONE)
+                revert Errors.AlreadyRevealed(msg.sender, gameId);
             game.p2ClearChoice = _getHashChoice(game.p2SaltedChoice, movePw);
             return;
         }
     }
 
-    function resolveGame(uint256 gameId) 
-    public
-    whenNotPaused
-    {
+    /* ========================================================================================= */
+    // Resolve
+    /* ========================================================================================= */
+
+    /// @dev Game is not resolvable if timer is still running and both players
+    ///      have not revealed their move.
+    function resolveGame(uint256 gameId) public whenNotPaused {
         Game storage game = Games[gameId];
         if (game.p1 == address(0)) revert Errors.IndexOutOfBounds(gameId);
         if (game.p2 == address(0)) revert Errors.NoSecondPlayer();
@@ -212,54 +206,61 @@ contract PRS is Ownable, Pausable, TaxableGame {
         bool isP1ChoiceNone = game.p1ClearChoice == Choices.NONE;
         bool isP2ChoiceNone = game.p2ClearChoice == Choices.NONE;
 
-        // @notice Game is not resolvable if timer is still running and both players 
-        //         have not revealed their move
-        if (isTimerRunning && (isP2ChoiceNone || isP1ChoiceNone)) revert Errors.NotResolvable(isTimerRunning, isP1ChoiceNone, isP2ChoiceNone, false);
+        if (isTimerRunning && (isP2ChoiceNone || isP1ChoiceNone))
+            revert Errors.NotResolvable(isTimerRunning, isP1ChoiceNone, isP2ChoiceNone, false);
         uint256 gameBalance = game.entryFee * 2;
 
-        // @notice Set to false before we payout
-        // no re-entrancy
+        /// Prevent re-entrancy.
         game.resolved = true;
 
-        // @notice If we are here that means both players revealed their move.
-        //         If both revealed their move in time we can choose a winner.
+        // If we are here that means both players revealed their move.
+        // If both revealed their move in time we can choose a winner.
         if (isTimerRunning) {
-            _chooseWinner(game.p1ClearChoice, game.p2ClearChoice, game.p1, game.p2, gameBalance);
+            address winner = _chooseWinner(
+                game.p1ClearChoice,
+                game.p2ClearChoice,
+                game.p1,
+                game.p2,
+                gameBalance
+            );
+            _insertTableRow(gameId, game, winner);
             return;
         }
 
-        // @notice Timer ran out and only p2 did not reveal
+        // Timer ran out and only p2 did not reveal
         if (!isTimerRunning && !isP1ChoiceNone && isP2ChoiceNone) {
             _payout(game.p1, gameBalance);
+            _insertTableRow(gameId, game, game.p1);
             return;
         }
 
-        // @notice Timer ran out and only p1 did not reveal
+        // Timer ran out and only p1 did not reveal
         if (!isTimerRunning && isP1ChoiceNone && !isP2ChoiceNone) {
             _payout(game.p2, gameBalance);
+            _insertTableRow(gameId, game, game.p2);
             return;
         }
-        // @notice If both players fail to reveal the entryFee gets "burned" ;)
+        // If both players fail to reveal the entryFee gets "burned" ;)
     }
 
     /* ========================================================================================= */
-    // Choosing a winner
+    // Internals
     /* ========================================================================================= */
 
-    // @notice How PRS chooses a winner when two choices are revealed.
-    //         Essential that you ZERO OUT ANY GAME BALANCES before calling this.
+    /// How PRS chooses a winner when two choices are revealed.
+    /// @dev Essential that you ZERO OUT ANY GAME BALANCES before calling this.
     function _chooseWinner(
         Choices p1Choice,
         Choices p2Choice,
         address p1,
         address p2,
         uint256 gameBalance
-    ) internal {
+    ) internal returns (address) {
         if (p1Choice == p2Choice) {
             _payout(p1, gameBalance / 2);
             _payout(p2, gameBalance / 2);
             emit GameDraw(p1, p1Choice, p2, p2Choice, gameBalance, block.timestamp);
-            return;
+            return address(0);
         }
 
         if (
@@ -269,23 +270,24 @@ contract PRS is Ownable, Pausable, TaxableGame {
         ) {
             _payout(p1, gameBalance);
             emit WonGameAgainst(p1, p1Choice, p2, p2Choice, gameBalance, block.timestamp);
-            return;
+            return p1;
         }
 
         if (p1Choice == Choices.INVALID) {
             _payout(p2, gameBalance);
             emit WonGameAgainst(p2, p2Choice, p1, p1Choice, gameBalance, block.timestamp);
-            return;
+            return p2;
         }
 
         if (p2Choice == Choices.INVALID) {
             _payout(p1, gameBalance);
             emit WonGameAgainst(p1, p1Choice, p2, p2Choice, gameBalance, block.timestamp);
-            return;
+            return p1;
         }
 
         _payout(p2, gameBalance);
         emit WonGameAgainst(p2, p2Choice, p1, p1Choice, gameBalance, block.timestamp);
+        return p2;
     }
 
     function _didTimerRunOut(uint256 timerStart) internal view returns (bool) {

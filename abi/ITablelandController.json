@@ -1,0 +1,3 @@
+[
+  "function getPolicy(address) payable returns (tuple(bool,bool,bool,string,string,string[]))"
+]

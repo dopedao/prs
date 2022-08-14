@@ -1,5 +1,5 @@
-node_modules
-
+.DS_Store
+tmp
 node_modules
 .env
 coverage
@@ -11,3 +11,4 @@ dist
 #Hardhat files
 cache
 artifacts
+deployments
