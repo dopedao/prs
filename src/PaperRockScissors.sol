@@ -86,7 +86,7 @@ contract PaperRockScissors is Ownable, Pausable, TaxableGame, PRSLeaderboard {
         return game;
     }
 
-    /// Return time left after Player 2 has revealed their move.
+    /// Return time left for both players to reveal their move
     function getTimeLeft(uint256 gameId) public view returns (uint256) {
         Game memory game = getGame(gameId);
         if (_didTimerRunOut(game.timerStart)) revert Errors.TimerFinished();
