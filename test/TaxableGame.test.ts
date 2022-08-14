@@ -75,7 +75,7 @@ describe('TaxableGame', function () {
         to.be.approximately(
           oldOwnerBalance, 
           // Calling unsafeSetBalance and withdrawTax takes some gas
-          parseEther('0.001')
+          parseEther('0.01')
         );
 
       expect(await this.tg.balanceOf(this.tg.address)).to.eq(ethers.BigNumber.from(0));

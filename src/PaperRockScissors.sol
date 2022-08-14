@@ -333,8 +333,8 @@ contract PaperRockScissors is Ownable(), Pausable(), TaxableGame {
 
     /// Initializes Tableland table to store record of games played.
     /// @param tablelandRegistry Address of the "tableland registry" on the chain this will be deployed on
-    /// @dev Abstracted out to a function so inherited contract can call this for testing.
-    function _createTable(address tablelandRegistry) internal {
+    /// @dev Abstracted as virtual function so we can override during testing.
+    function _createTable(address tablelandRegistry) internal virtual {
         _tableland = ITablelandTables(tablelandRegistry);
 
         /// @dev See tableland docs for more info

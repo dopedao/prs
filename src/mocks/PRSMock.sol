@@ -6,6 +6,13 @@ import { PaperRockScissors } from "../PaperRockScissors.sol";
 contract PRSMock is PaperRockScissors {
     constructor(address tablelandRegistry) PaperRockScissors(tablelandRegistry) { }
 
+    // NO-OP
+    // Not having tableland contracts locally fucks our tests up.
+    // This is just a stub so they can run. We can verify this works
+    // by deploying to a real test net.
+    function _createTable(address tablelandRegistry) internal override { 
+    }
+
     function unsafeChooseWinner(
         Choices p1Choice,
         Choices p2Choice,
