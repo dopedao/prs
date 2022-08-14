@@ -52,7 +52,7 @@ import { ITablelandTables } from "@tableland/evm/contracts/ITablelandTables.sol"
 /// @author DOPE DAO
 /// @notice A competitive, token-based, on-chain game of skill that persists results to
 ///         a public leaderboard stored in tableland.
-contract PRS is Ownable(), Pausable(), TaxableGame {
+contract PaperRockScissors is Ownable(), Pausable(), TaxableGame {
     enum Choices {
         NONE,
         ROCK,
@@ -335,40 +335,40 @@ contract PRS is Ownable(), Pausable(), TaxableGame {
     /// @param tablelandRegistry Address of the "tableland registry" on the chain this will be deployed on
     /// @dev Abstracted out to a function so inherited contract can call this for testing.
     function _createTable(address tablelandRegistry) internal {
-        // _tableland = ITablelandTables(tablelandRegistry);
+        _tableland = ITablelandTables(tablelandRegistry);
 
-        // /// @dev See tableland docs for more info
-        // string memory tableColumns = "("
-        //     "game_id INTEGER UNIQUE, "
-        //     "created_at_timestamp INTEGER, "
-        //     "game_entry_fee INTEGER, "
-        //     "player_1 TEXT, "
-        //     "player_2 TEXT, "
-        //     "winner TEXT, "
-        //     "player_1_move INTEGER, "
-        //     "player_2_move INTEGER "
-        // ");";
+        /// @dev See tableland docs for more info
+        string memory tableColumns = "("
+            "game_id INTEGER UNIQUE, "
+            "created_at_timestamp INTEGER, "
+            "game_entry_fee INTEGER, "
+            "player_1 TEXT, "
+            "player_2 TEXT, "
+            "winner TEXT, "
+            "player_1_move INTEGER, "
+            "player_2_move INTEGER "
+        ");";
 
-        // /// @dev Stores unique ID for our created table
-        // _gameTableId = _tableland.createTable(
-        //     address(this),
-        //     string.concat(
-        //         "CREATE TABLE",
-        //         _tablePrefix,
-        //         "_",
-        //         Strings.toString(block.chainid),
-        //         " ",
-        //         tableColumns
-        //     )
-        // );
+        /// @dev Stores unique ID for our created table
+        _gameTableId = _tableland.createTable(
+            address(this),
+            string.concat(
+                "CREATE TABLE",
+                _tablePrefix,
+                "_",
+                Strings.toString(block.chainid),
+                " ",
+                tableColumns
+            )
+        );
 
-        // /// @dev Stores full table name for new table.
-        // _gameTable = string.concat(
-        //     _tablePrefix,
-        //     "_",
-        //     Strings.toString(block.chainid),
-        //     "_",
-        //     Strings.toString(_gameTableId)
-        // );
+        /// @dev Stores full table name for new table.
+        _gameTable = string.concat(
+            _tablePrefix,
+            "_",
+            Strings.toString(block.chainid),
+            "_",
+            Strings.toString(_gameTableId)
+        );
     }
 }

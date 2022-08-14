@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.12;
 
-import { PRS } from "../PRS.sol";
+import { PaperRockScissors } from "../PaperRockScissors.sol";
 
-contract PRSMock is PRS {
-    constructor(address tablelandRegistry) PRS(tablelandRegistry) {
-    }
+contract PRSMock is PaperRockScissors {
+    constructor(address tablelandRegistry) PaperRockScissors(tablelandRegistry) { }
 
     function unsafeChooseWinner(
         Choices p1Choice,

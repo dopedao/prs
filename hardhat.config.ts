@@ -12,6 +12,9 @@ import 'dotenv/config';
 
 const config: HardhatUserConfig = {
   solidity: '0.8.12',
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
+  },
   namedAccounts: {
     deployer: 0,
   },
@@ -101,6 +104,7 @@ const config: HardhatUserConfig = {
         process.env.OPTIMISM_GOERLI_API_KEY ?? ""
       }`,
       deploy: ['deploy/optimism-goerli/'],
+      gasPrice: 50000000000, // 50gwei
       accounts:
         process.env.OPTIMISM_GOERLI_PRIVATE_KEY !== undefined
           ? [process.env.OPTIMISM_GOERLI_PRIVATE_KEY]
@@ -108,6 +112,7 @@ const config: HardhatUserConfig = {
     },
     hardhat: {
       deploy: ['deploy/hardhat/'],
+      gasPrice: 50000000000, // 50gwei
       mining: {
         auto: !(process.env.HARDHAT_DISABLE_AUTO_MINING === "true"),
         interval: [100, 3000],
