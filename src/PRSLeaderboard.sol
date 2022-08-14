@@ -25,18 +25,6 @@ abstract contract PRSLeaderboard {
     function _createTable(address tablelandRegistry) internal virtual {
         _tableland = ITablelandTables(tablelandRegistry);
 
-        /// @dev See tableland docs for more info
-        string memory tableColumns = "("
-        "game_id INTEGER UNIQUE, "
-        "created_at_timestamp INTEGER, "
-        "game_entry_fee INTEGER, "
-        "player_1 TEXT, "
-        "player_2 TEXT, "
-        "winner TEXT, "
-        "player_1_move INTEGER, "
-        "player_2_move INTEGER "
-        ");";
-
         /// @dev Stores unique ID for our created table
         _gameTableId = _tableland.createTable(
             address(this),
@@ -45,8 +33,16 @@ abstract contract PRSLeaderboard {
                 _tablePrefix,
                 "_",
                 Strings.toString(block.chainid),
-                " ",
-                tableColumns
+                " (",
+                "game_id INT UNIQUE, ",
+                "created_at_timestamp INT, ",
+                "game_entry_fee INT, ",
+                "player_1 TEXT, ",
+                "player_2 TEXT, ",
+                "winner TEXT, ",
+                "player_1_move INT, ",
+                "player_2_move INT ",
+                ");"
             )
         );
 

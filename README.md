@@ -50,5 +50,8 @@ yarn deploy:dev
 Assuming you've setup your `.env` file correctly with an `ETHERSCAN_API_KEY`, run the following after making a deployment to a live network above.
 
 ```sh
-yarn hardhat verify --network $NETWORK $CONTRACT_ADDRESS $TABLELAND_GATEWAY_ADDRESS_FOR_NETWORK
+## Goerli testnet
+yarn hardhat verify --network ethereum-goerli [contract address] 0xDA8EA22d092307874f30A1F277D1388dca0BA97a
+
+## Optimism (not ready for prime time yet)
 ```

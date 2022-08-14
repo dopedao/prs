@@ -1,20 +1,17 @@
 import { ethers, deployments } from 'hardhat';
 import { CHOICES } from './constants';
-import { proxies } from '@tableland/evm/proxies';
 
 // These are executed as "helpers" instead of "fixtures" because of this error in hardhat.
 // https://github.com/NomicFoundation/hardhat/issues/2980
 export async function deployPrs() {
   await deployments.fixture(['PRSMock']);
   const prsMock = await ethers.getContract("PRSMock");
-  // const PRSMock = await ethers.getContractFactory('PRSMock');
-  // const prsMock = await PRSMock.deploy();
   const [p1, p2] = await ethers.getSigners();
   return { prsMock, p1, p2 };
 }
 
 export function clearAndHashChoice(choices: CHOICES) {
-  const clearChoice = choices + '-' + 'freibier';
+  const clearChoice = choices + '-' + 'some-un-hackable-password';
   const hashedChoice = ethers.utils.soliditySha256(['string'], [clearChoice]);
 
   return [

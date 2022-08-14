@@ -100,12 +100,10 @@ contract PaperRockScissors is Ownable, Pausable, TaxableGame, PRSLeaderboard {
         return game.entryFee;
     }
 
-    /// Pause game in case of suspicious activity
     function pauseGame() public onlyOwner {
         _pause();
     }
 
-    /// Unpause game
     function unpauseGame() public onlyOwner {
         _unpause();
     }
