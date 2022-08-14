@@ -29,7 +29,7 @@ abstract contract PRSLeaderboard {
         _gameTableId = _tableland.createTable(
             address(this),
             string.concat(
-                "CREATE TABLE",
+                "CREATE TABLE ",
                 _tablePrefix,
                 "_",
                 Strings.toString(block.chainid),
