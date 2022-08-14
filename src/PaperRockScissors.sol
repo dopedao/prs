@@ -5,10 +5,10 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
-import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { Errors } from "./Errors.sol";
+
 import { TaxableGame } from "./TaxableGame.sol";
-import { ITablelandTables } from "@tableland/evm/contracts/ITablelandTables.sol";
+import { PRSLeaderboard } from "./PRSLeaderboard.sol";
+import { Choices, Errors, Game } from "./PRSLibrary.sol";
 
 //                                       .::^^^^::..
 //                              .:^!?YPG##&&$$$$$&&#BP5J7~:
@@ -48,42 +48,18 @@ import { ITablelandTables } from "@tableland/evm/contracts/ITablelandTables.sol"
 //                                ..::::::::...
 //
 
+/// A competitive, token-based, on-chain game of skill that persists results
+/// to a public leaderboard stored in tableland.
+///
 /// @title PAPER, ROCK, SCISSORS
 /// @author DOPE DAO
-/// @notice A competitive, token-based, on-chain game of skill that persists results to
-///         a public leaderboard stored in tableland.
-contract PaperRockScissors is Ownable(), Pausable(), TaxableGame {
-    enum Choices {
-        NONE,
-        ROCK,
-        PAPER,
-        SCISSORS,
-        INVALID
-    }
-
-    struct Game {
-        bytes32 p1SaltedChoice;
-        bytes32 encChoice;
-        Choices p1ClearChoice;
-        Choices p2ClearChoice;
-        address p1;
-        address p2;
-        uint256 entryFee;
-        uint256 timerStart;
-        bool resolved;
-    }
-
+contract PaperRockScissors is Ownable, Pausable, TaxableGame, PRSLeaderboard {
     /// Both players have 12 hours to reveal their move.
     /// If one of them fails to do so the other can take the pot.
     uint256 public revealTimeout = 12 hours;
     using Counters for Counters.Counter;
     Counters.Counter private _games;
     mapping(uint256 => Game) Games;
-
-    ITablelandTables private _tableland;
-    uint256 private _gameTableId;
-    string private _gameTable;
-    string private _tablePrefix = "prs";
 
     event CreatedGame(address indexed, uint256, uint256);
     event JoinedGameOf(address indexed, address indexed, uint256, uint256, uint256);
@@ -101,7 +77,7 @@ contract PaperRockScissors is Ownable(), Pausable(), TaxableGame {
         revealTimeout = newTimeout;
     }
 
-    /// Returns a single game for Player 1
+    /// @dev Get game by (internal) ID
     /// @return Game struct
     function getGame(uint256 gameId) public view returns (Game memory) {
         Game storage game = Games[gameId];
@@ -182,7 +158,7 @@ contract PaperRockScissors is Ownable(), Pausable(), TaxableGame {
         if (entryFee < game.entryFee) revert Errors.AmountTooLow(entryFee, game.entryFee);
 
         game.p2 = msg.sender;
-        game.encChoice = encChoice;
+        game.p2SaltedChoice = encChoice;
         game.timerStart = block.timestamp;
 
         _subtractFromBalance(msg.sender, entryFee);
@@ -211,7 +187,7 @@ contract PaperRockScissors is Ownable(), Pausable(), TaxableGame {
         if (msg.sender == player2) {
             if (game.p2ClearChoice != Choices.NONE)
                 revert Errors.AlreadyRevealed(msg.sender, gameId);
-            game.p2ClearChoice = _getHashChoice(game.encChoice, movePw);
+            game.p2ClearChoice = _getHashChoice(game.p2SaltedChoice, movePw);
             return;
         }
     }
@@ -242,19 +218,28 @@ contract PaperRockScissors is Ownable(), Pausable(), TaxableGame {
         // If we are here that means both players revealed their move.
         // If both revealed their move in time we can choose a winner.
         if (isTimerRunning) {
-            _chooseWinner(game.p1ClearChoice, game.p2ClearChoice, game.p1, game.p2, gameBalance);
+            address winner = _chooseWinner(
+                game.p1ClearChoice,
+                game.p2ClearChoice,
+                game.p1,
+                game.p2,
+                gameBalance
+            );
+            _insertTableRow(gameId, game, winner);
             return;
         }
 
         // Timer ran out and only p2 did not reveal
         if (!isTimerRunning && !isP1ChoiceNone && isP2ChoiceNone) {
             _payout(game.p1, gameBalance);
+            _insertTableRow(gameId, game, game.p1);
             return;
         }
 
         // Timer ran out and only p1 did not reveal
         if (!isTimerRunning && isP1ChoiceNone && !isP2ChoiceNone) {
             _payout(game.p2, gameBalance);
+            _insertTableRow(gameId, game, game.p2);
             return;
         }
         // If both players fail to reveal the entryFee gets "burned" ;)
@@ -272,12 +257,12 @@ contract PaperRockScissors is Ownable(), Pausable(), TaxableGame {
         address p1,
         address p2,
         uint256 gameBalance
-    ) internal {
+    ) internal returns (address) {
         if (p1Choice == p2Choice) {
             _payout(p1, gameBalance / 2);
             _payout(p2, gameBalance / 2);
             emit GameDraw(p1, p1Choice, p2, p2Choice, gameBalance, block.timestamp);
-            return;
+            return address(0);
         }
 
         if (
@@ -287,23 +272,24 @@ contract PaperRockScissors is Ownable(), Pausable(), TaxableGame {
         ) {
             _payout(p1, gameBalance);
             emit WonGameAgainst(p1, p1Choice, p2, p2Choice, gameBalance, block.timestamp);
-            return;
+            return p1;
         }
 
         if (p1Choice == Choices.INVALID) {
             _payout(p2, gameBalance);
             emit WonGameAgainst(p2, p2Choice, p1, p1Choice, gameBalance, block.timestamp);
-            return;
+            return p2;
         }
 
         if (p2Choice == Choices.INVALID) {
             _payout(p1, gameBalance);
             emit WonGameAgainst(p1, p1Choice, p2, p2Choice, gameBalance, block.timestamp);
-            return;
+            return p1;
         }
 
         _payout(p2, gameBalance);
         emit WonGameAgainst(p2, p2Choice, p1, p1Choice, gameBalance, block.timestamp);
+        return p2;
     }
 
     function _didTimerRunOut(uint256 timerStart) internal view returns (bool) {
@@ -329,46 +315,5 @@ contract PaperRockScissors is Ownable(), Pausable(), TaxableGame {
         }
 
         return Choices.INVALID;
-    }
-
-    /// Initializes Tableland table to store record of games played.
-    /// @param tablelandRegistry Address of the "tableland registry" on the chain this will be deployed on
-    /// @dev Abstracted as virtual function so we can override during testing.
-    function _createTable(address tablelandRegistry) internal virtual {
-        _tableland = ITablelandTables(tablelandRegistry);
-
-        /// @dev See tableland docs for more info
-        string memory tableColumns = "("
-            "game_id INTEGER UNIQUE, "
-            "created_at_timestamp INTEGER, "
-            "game_entry_fee INTEGER, "
-            "player_1 TEXT, "
-            "player_2 TEXT, "
-            "winner TEXT, "
-            "player_1_move INTEGER, "
-            "player_2_move INTEGER "
-        ");";
-
-        /// @dev Stores unique ID for our created table
-        _gameTableId = _tableland.createTable(
-            address(this),
-            string.concat(
-                "CREATE TABLE",
-                _tablePrefix,
-                "_",
-                Strings.toString(block.chainid),
-                " ",
-                tableColumns
-            )
-        );
-
-        /// @dev Stores full table name for new table.
-        _gameTable = string.concat(
-            _tablePrefix,
-            "_",
-            Strings.toString(block.chainid),
-            "_",
-            Strings.toString(_gameTableId)
-        );
     }
 }

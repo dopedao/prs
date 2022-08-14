@@ -15,5 +15,30 @@ library Errors {
     error TimerFinished();
     error TimerStillRunning();
     error AlreadyRevealed(address player, uint256 gameId);
-    error NotResolvable(bool timerStillRunning, bool p1Revealed, bool p2Revealed, bool alreadyResolved);
+    error NotResolvable(
+        bool timerStillRunning,
+        bool p1Revealed,
+        bool p2Revealed,
+        bool alreadyResolved
+    );
+}
+
+struct Game {
+    bytes32 p1SaltedChoice;
+    bytes32 p2SaltedChoice;
+    Choices p1ClearChoice;
+    Choices p2ClearChoice;
+    address p1;
+    address p2;
+    uint256 entryFee;
+    uint256 timerStart;
+    bool resolved;
+}
+
+enum Choices {
+    NONE,
+    ROCK,
+    PAPER,
+    SCISSORS,
+    INVALID
 }

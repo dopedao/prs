@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.12;
 
-import { Errors } from "./Errors.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+import { Errors } from "./PRSLibrary.sol";
 
 // @notice Abstract contract to handle fees, taxes, balances, and payouts of players
 abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {

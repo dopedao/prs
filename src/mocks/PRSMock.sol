@@ -1,25 +1,39 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.12;
 
+import { Choices, Errors, Game } from "../PRSLibrary.sol";
 import { PaperRockScissors } from "../PaperRockScissors.sol";
 
+/// @dev Mock contract for testing purposes.
+///      Allows us to expose private methods for testing, and stub external calls
+///      that would otherwise mess up our tests.
 contract PRSMock is PaperRockScissors {
-    constructor(address tablelandRegistry) PaperRockScissors(tablelandRegistry) { }
-
-    // NO-OP
-    // Not having tableland contracts locally fucks our tests up.
-    // This is just a stub so they can run. We can verify this works
-    // by deploying to a real test net.
-    function _createTable(address tablelandRegistry) internal override { 
+    constructor(address tablelandRegistry) PaperRockScissors(tablelandRegistry) {}
+    
+    /* ========================================================================================= */
+    // External Tableland calls
+    /* ========================================================================================= */
+    function _createTable(address tablelandRegistry) internal override {
+        // no-op
+    }
+    function _insertTableRow(
+        uint256 gameId,
+        Game memory game,
+        address winner
+    ) internal override {
+        // no-op
     }
 
+    /* ========================================================================================= */
+    // Private methods for testing
+    /* ========================================================================================= */
     function unsafeChooseWinner(
         Choices p1Choice,
         Choices p2Choice,
         address p1,
         address p2,
         uint256 entryFee
-    ) public {
+    ) public returns (address) {
         return _chooseWinner(p1Choice, p2Choice, p1, p2, entryFee);
     }
 
@@ -30,7 +44,8 @@ contract PRSMock is PaperRockScissors {
     function unsafeGetHashChoice(bytes32 hashChoice, string calldata clearChoice)
         public
         pure
-        returns (Choices) {
+        returns (Choices)
+    {
         return _getHashChoice(hashChoice, clearChoice);
     }
 }
