@@ -2,7 +2,7 @@
 
 A simple token-based game of skill deployed on ethereum-based blockchains.
 
-This repo makes extensive use of the [hardhat](https://hardhat.org) smart contract development and deployment framework; for development, testing, and deployment.
+This repo makes extensive use of the [hardhat](https://hardhat.org) smart contract framework; for development, testing, and deployment.
 
 ## Setup
 
