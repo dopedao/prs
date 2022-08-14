@@ -1,6 +1,6 @@
 # PAPER ROCK SCISSORS
 
-A simple token-based game of skill deployed on the ethereum blockchains.
+A simple token-based game of skill deployed on ethereum-based blockchains.
 
 This repo makes extensive use of the [hardhat](https://hardhat.org) development and deployment framework for solidity; for development, testing, and deployment.
 
