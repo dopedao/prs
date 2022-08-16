@@ -6,6 +6,7 @@
   "event Paused(address)",
   "event Unpaused(address)",
   "function balanceOf(address) view returns (uint256)",
+  "function depositPaper(uint256)",
   "function getBalance() view returns (uint256)",
   "function minEntryFee() view returns (uint256)",
   "function owner() view returns (address)",
@@ -17,6 +18,6 @@
   "function transferOwnership(address)",
   "function unsafePayout(address,uint256)",
   "function unsafeSetBalance(address,uint256)",
-  "function withdraw() payable",
-  "function withdrawTax() payable"
+  "function withdraw(uint256)",
+  "function withdrawTax()"
 ]

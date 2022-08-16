@@ -21,6 +21,7 @@
   "event Unpaused(address)",
   "event WonGameAgainst(address indexed,uint8,address indexed,uint8,uint256,uint256)",
   "function balanceOf(address) view returns (uint256)",
+  "function depositPaper(uint256)",
   "function gameTable() view returns (string)",
   "function getBalance() view returns (uint256)",
   "function getGame(uint256) view returns (tuple(bytes32,bytes32,uint8,uint8,address,address,uint256,uint256,bool))",
@@ -45,6 +46,6 @@
   "function unsafeChooseWinner(uint8,uint8,address,address,uint256) returns (address)",
   "function unsafeDidTimerRunOut(uint256) view returns (bool)",
   "function unsafeGetHashChoice(bytes32,string) pure returns (uint8)",
-  "function withdraw() payable",
-  "function withdrawTax() payable"
+  "function withdraw(uint256)",
+  "function withdrawTax()"
 ]
