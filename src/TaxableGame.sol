@@ -4,6 +4,7 @@ pragma solidity ^0.8.12;
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { Errors } from "./PRSLibrary.sol";
 
@@ -13,6 +14,10 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     uint256 public minEntryFee = 10000000 gwei; // 0.01 eth
     // @notice Tax percent the game takes for each round of play
     uint256 public taxPercent = 5;
+    // @notice Address of $Paper contract
+    address private paperAddress = 0x00F932F0FE257456b32dedA4758922E56A4F4b42;
+    // @notice Wrapper to execute erc20 functions
+    IERC20 private paperContract = IERC20(paperAddress);
 
     // @notice Where we keep balances of players and the contract itself
     mapping(address => uint256) internal _balances;
@@ -36,24 +41,31 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     /* ========================================================================================= */
 
     // @notice Players increase their balance by sending the contract tokens
-    receive() external payable {
-        _addToBalance(msg.sender, msg.value);
+    receive() external payable {}
+
+    // @notice Players can deposit $Paper to the contract
+    // make sure to approve our contract to transfer first
+    function depositPaper(uint256 amount) public whenNotPaused {
+        require(paperContract.transferFrom(msg.sender, address(this), amount), "Transaction failed");
+        _balances[msg.sender] += amount;
     }
 
     // @notice Players can withdraw their balance from the contract
-    function withdraw() public payable whenNotPaused {
+    function withdraw(uint256 amount) public whenNotPaused {
         uint256 balance = balanceOf(msg.sender);
-        if (address(this).balance < balance) revert Errors.NotEnoughMoneyInContract(address(this).balance, balance);
+        if (_getContractBal() < balance) revert Errors.NotEnoughMoneyInContract(address(this).balance, balance);
         _setBalance(msg.sender, 0);
-        payable(msg.sender).transfer(balance);
+        
+        _transferPaper(msg.sender, amount);
     }
 
     // @notice Withdraws tax from games played to contract owner
-    function withdrawTax() public payable onlyOwner {
+    function withdrawTax() public onlyOwner {
         uint256 balance = balanceOf(address(this));
-        if (address(this).balance < balance) revert Errors.NotEnoughMoneyInContract(address(this).balance, balance);
+        if (_getContractBal() < balance) revert Errors.NotEnoughMoneyInContract(address(this).balance, balance);
         _setBalance(address(this), 0);
-        payable(msg.sender).transfer(balance);
+
+        _transferPaper(msg.sender, balance);
     }
 
     /* ========================================================================================= */
@@ -71,7 +83,7 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     // Balances
     /* ========================================================================================= */
 
-    // @notice Entire balance of contract
+    // @notice Eth balance of contract
     function getBalance() public view returns (uint256) {
         return address(this).balance;
     }
@@ -121,6 +133,16 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
         _addToBalance(address(this), tax);
         _addToBalance(player, payout);
 
-        emit PaidOut(player, payout, block.timestamp);
+    }
+
+    // @notice Transfer $Paper from contract to receiver
+    function _transferPaper(address receiver, uint256 amount) internal {
+        paperContract.transfer(receiver, amount);
+        emit PaidOut(receiver, amount, block.timestamp);
+    }
+
+    // @notice Get $Paper balance of contract
+    function _getContractBal() internal view returns (uint256) {
+        return paperContract.balanceOf(address(this));
     }
 }

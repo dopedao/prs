@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { parseEther, formatEther } from 'ethers/lib/utils';
+import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { CHOICES } from './lib/constants';
 import { getRandomNumber } from './lib/utils';
@@ -19,7 +19,6 @@ describe('PRS-concurrency', function () {
       const numGames = getRandomNumber(2, 7);
       const entryFee = 1;
       const entryFeeEth = ethers.utils.parseEther(entryFee.toString());
-      const gameIndex = 0;
       const p2Choice = CHOICES.SCISSORS;
 
       // Ensure players can join multiple times by loading big balance
