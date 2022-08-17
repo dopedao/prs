@@ -8,7 +8,9 @@ describe('TaxableGame', function () {
   beforeEach(async function () {
     [this.contractOwner, this.randomHacker, this.clumsyNoob] = await ethers.getSigners();
     const TaxableGameMock = await ethers.getContractFactory('TaxableGameMock');
+    const paperMock = await ethers.getContractFactory('PaperMock');
     this.tg = await TaxableGameMock.deploy();
+    this.pm = await paperMock.deploy();
   });
 
   describe('minEntryFee', function () {
@@ -56,20 +58,32 @@ describe('TaxableGame', function () {
     });
 
     it('allows contract owner to withdraw balance for contract itself', async function () {
+      console.log("yea1")
       const oldOwnerBalance = await this.contractOwner.getBalance();
 
+      console.log("yea2")
       const fakeTaxMoney = parseEther('69');
-      await this.contractOwner.sendTransaction({
-        to: this.tg.address,
-        value: fakeTaxMoney,
-      });
+      await this.tg.connect(this.contractOwner).changePaperContract(this.tg.address)
+      console.log("yea3")
+
+      await this.pm.connect(this.contractOwner).mintTo(this.tg.address, fakeTaxMoney);
+      console.log("yea4")
 
       // Fake setting balance for contract
       await this.tg.unsafeSetBalance(this.tg.address, BigNumber.from(0));
+      console.log("yea5")
       await this.tg.unsafeSetBalance(this.tg.address, fakeTaxMoney);
+      console.log("yea6")
 
-      await this.tg.withdrawTax();
-      const newOwnerBalance = await this.contractOwner.getBalance();
+      console.log(await this.tg.balanceOf(this.tg.address));
+      console.log(await this.tg.balanceOf(this.contractOwner.address));
+
+      console.log(await this.pm.balanceOf(this.tg.address));
+
+      await this.tg.connect(this.contractOwner).withdrawTax();
+      console.log("yea7")
+      const newOwnerBalance = await this.tg.balanceOf(this.contractOwner.address);
+      console.log("yea yea")
       
       expect(newOwnerBalance).
         to.be.approximately(
@@ -77,6 +91,7 @@ describe('TaxableGame', function () {
           // Calling unsafeSetBalance and withdrawTax takes some gas
           parseEther('0.01')
         );
+      console.log("yea yea yea")
 
       expect(await this.tg.balanceOf(this.tg.address)).to.eq(ethers.BigNumber.from(0));
     });
