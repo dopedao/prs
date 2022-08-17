@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { ERRORS, CHOICES } from './lib/constants';
-import { clearAndHashChoice, deployPrs, setupGame } from './lib/helpers';
+import { clearAndHashChoice, deployPaperMock, deployPrs, setupGame } from './lib/helpers';
 
 describe('PRS-main', function () {
 
@@ -27,16 +27,22 @@ describe('PRS-main', function () {
   describe('startGame', function () {
     it('Creates a game', async function () {
       const { prsMock, p1 } = await deployPrs();
+      const { paperMock } = await deployPaperMock();
       const [, hashedChoice] = clearAndHashChoice(CHOICES.PAPER)
 
-      const weiAmount = ethers.utils.parseEther('0.1');
-      await p1.sendTransaction({ to: prsMock.address, value: weiAmount });
-      await prsMock.connect(p1).startGame(hashedChoice, weiAmount);
+      const paperAmount = ethers.utils.parseEther('0.1');
+
+      await paperMock.connect(p1).mint(paperAmount);
+      await prsMock.connect(p1).changePaperContract(paperMock.address)
+      await paperMock.connect(p1).approve(prsMock.address, paperAmount);
+      await prsMock.connect(p1).depositPaper(paperAmount);
+
+      await prsMock.connect(p1).startGame(hashedChoice, paperAmount);
       const game = await prsMock.connect(p1).getGame(0);
 
       expect(game.p1).to.equal(p1.address);
       expect(game.p1SaltedChoice).to.equal(hashedChoice);
-      expect(game.entryFee).to.equal(weiAmount);
+      expect(game.entryFee).to.equal(paperAmount);
     });
 
     it('Reverts on entryFee below minimum', async function () {
@@ -44,17 +50,17 @@ describe('PRS-main', function () {
       const [, hashedChoice] = clearAndHashChoice(CHOICES.PAPER)
 
       const minEntryFee = await prsMock.minEntryFee();
-      const weiAmount = ethers.BigNumber.from('900000000000000'); /* 0.09 Eth */
+      const paperAmount = ethers.BigNumber.from('900000000000000'); /* 0.09 Eth */
 
-      await expect(prsMock.connect(p1).startGame(hashedChoice, weiAmount))
+      await expect(prsMock.connect(p1).startGame(hashedChoice, paperAmount))
         .to.be.revertedWithCustomError(prsMock, ERRORS.AmountTooLow)
-        .withArgs(weiAmount, minEntryFee);
+        .withArgs(paperAmount, minEntryFee);
     });
   });
 
   describe('joinGame', function () {
     it('Allows p2 to join the game', async function () {
-      const { prsMock, p1, entryFee } = await setupGame();
+      const { prsMock, p1, entryFee, paperMock } = await setupGame();
       const [, p2] = await ethers.getSigners();
       const [p2ClearChoice, p2HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
       const gameIndex = 0;
@@ -94,27 +100,39 @@ describe('PRS-main', function () {
     });
 
     it('Prevents player joining his own game', async function () {
-      const { prsMock, p1, entryFee } = await setupGame();
+      const { prsMock, p1, entryFee, paperMock } = await setupGame();
       const [, p1HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
       const gameIndex = 0;
+      
       // Need enough to join twice
-      await p1.sendTransaction({ to: prsMock.address, value: ethers.utils.parseEther('5') });
+      await paperMock.connect(p1).mint(entryFee);
+      await paperMock.connect(p1).approve(prsMock.address, entryFee.mul(2));
+      await prsMock.connect(p1).depositPaper(entryFee);
+
       await expect(prsMock.connect(p1).joinGame(gameIndex, p1HashedChoice, entryFee))
         .to.be.revertedWithCustomError(prsMock, ERRORS.CannotJoinGame)
         .withArgs(false, true);
     });
 
     it('Reverts if game already has a second player', async function () {
-      const { prsMock, p1, entryFee } = await setupGame();
+      const { prsMock, p1, entryFee, paperMock } = await setupGame();
       const [, p2, p3] = await ethers.getSigners();
       const [, p2HashedChoice] = clearAndHashChoice(CHOICES.PAPER)
       const [, p3HashedChoice] = clearAndHashChoice(CHOICES.ROCK);
 
       const gameIndex = 0;
 
-      await prsMock.connect(p2).joinGame(gameIndex, p2HashedChoice, entryFee);
+      // p2
+      await paperMock.connect(p2).mint(entryFee);
+      await paperMock.connect(p2).approve(prsMock.address, entryFee.mul(2));
+      await prsMock.connect(p2).depositPaper(entryFee);
+      
+      // p3
+      await paperMock.connect(p3).mint(entryFee);
+      await paperMock.connect(p3).approve(prsMock.address, entryFee.mul(2));
+      await prsMock.connect(p3).depositPaper(entryFee);
 
-      await p3.sendTransaction({ to: prsMock.address, value: ethers.utils.parseEther('1') });
+      await prsMock.connect(p2).joinGame(gameIndex, p2HashedChoice, entryFee);
       await expect(prsMock.connect(p3).joinGame(gameIndex, p3HashedChoice, entryFee))
         .to.be.revertedWithCustomError(prsMock, ERRORS.CannotJoinGame)
         .withArgs(true, false);
