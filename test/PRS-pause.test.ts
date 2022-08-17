@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { CHOICES } from './lib/constants';
-import { clearAndHashChoice, deployPrs, setupGame } from './lib/helpers';
+import { clearAndHashChoice, deployPaperMock, deployPrs, setupGame } from './lib/helpers';
 
 const pauseRevertMessage = 'Pausable: paused';
 
@@ -9,11 +9,16 @@ describe('PRS-pause', function () {
   describe('startGame', function () {
     it('Should not let players create new games if contract is paused', async function () {
       const { p1, p2, prsMock } = await deployPrs();
+      const { paperMock } = await deployPaperMock();
       const entryFee = ethers.utils.parseEther('1');
 
       const [, hashedChoice] = clearAndHashChoice(CHOICES.PAPER);
 
-      await p1.sendTransaction({ to: prsMock.address, value: entryFee });
+      await prsMock.connect(p1).changePaperContract(paperMock.address);
+      await paperMock.connect(p1).mint(entryFee);
+      await paperMock.connect(p1).approve(prsMock.address, entryFee);
+      await prsMock.connect(p1).depositPaper(entryFee);
+
       await prsMock.connect(p1).pauseGame();
 
       await expect(prsMock.connect(p1).startGame(hashedChoice, entryFee)).to.revertedWith(
@@ -72,10 +77,12 @@ describe('PRS-pause', function () {
 
     describe('withdraw', async function () {
         it('Should not allow withdrawing when contract is paused', async function () {
-            const { clearChoice, entryFee, gameIndex, hashedChoice, p1, p2, prsMock } = await setupGame();
+            const { clearChoice, entryFee, gameIndex, hashedChoice, p1, p2, prsMock, paperMock } = await setupGame();
             await prsMock.connect(p1).pauseGame();
 
-            await expect(prsMock.connect(p2).withdraw()).to.revertedWith(pauseRevertMessage);
+            await paperMock.connect(p1).mintTo(prsMock.address, entryFee);
+
+            await expect(prsMock.connect(p2).withdraw(entryFee)).to.revertedWith(pauseRevertMessage);
         })
     })
 });
