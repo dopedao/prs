@@ -21,6 +21,7 @@
   "event Unpaused(address)",
   "event WonGameAgainst(address indexed,uint8,address indexed,uint8,uint256,uint256)",
   "function balanceOf(address) view returns (uint256)",
+  "function changePaperContract(address)",
   "function depositPaper(uint256)",
   "function gameTable() view returns (string)",
   "function getBalance() view returns (uint256)",

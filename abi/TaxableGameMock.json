@@ -6,6 +6,7 @@
   "event Paused(address)",
   "event Unpaused(address)",
   "function balanceOf(address) view returns (uint256)",
+  "function changePaperContract(address)",
   "function depositPaper(uint256)",
   "function getBalance() view returns (uint256)",
   "function minEntryFee() view returns (uint256)",
