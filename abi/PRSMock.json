@@ -47,8 +47,6 @@
   "function unsafeChooseWinner(uint8,uint8,address,address,uint256) returns (address)",
   "function unsafeDidTimerRunOut(uint256) view returns (bool)",
   "function unsafeGetHashChoice(bytes32,string) pure returns (uint8)",
-  "function unsafePayout(address,uint256)",
-  "function unsafeSetBalance(address,uint256)",
   "function withdraw(uint256)",
   "function withdrawTax()"
 ]
