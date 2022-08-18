@@ -31,9 +31,6 @@ describe('PRS-concurrency', function () {
       await this.paperMock.connect(this.p1).approve(this.prsMock.address, paperAmount);
       await this.paperMock.connect(this.p2).approve(this.prsMock.address, paperAmount);
 
-      console.log(await this.paperMock.balanceOf(this.p1.address));
-      console.log(await this.paperMock.balanceOf(this.p2.address));
-
       await this.prsMock.connect(this.p1).depositPaper(parseEther("20"));
       await this.prsMock.connect(this.p2).depositPaper(parseEther("20"));
 
