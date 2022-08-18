@@ -51,11 +51,10 @@ describe('TaxableGame', function () {
   describe('Balances', function () {
     it('should getBalance() of contract', async function () {
       const expectedContractBalance = parseEther('20');
-      await this.contractOwner.sendTransaction({
-        to: this.tg.address,
-        value: expectedContractBalance,
-      });
-      const balance = await this.tg.getBalance();
+
+      await this.pm.connect(this.contractOwner).mintTo(this.tg.address, expectedContractBalance);
+
+      const balance = await this.tg.getPaperBalance();
       expect(balance).to.equal(expectedContractBalance);
     });
 
