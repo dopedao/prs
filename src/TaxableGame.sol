@@ -58,7 +58,8 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     function withdraw(uint256 amount) public whenNotPaused {
         uint256 balance = balanceOf(msg.sender);
         if (_getContractBal() < balance) revert Errors.NotEnoughMoneyInContract(address(this).balance, balance);
-        _setBalance(msg.sender, 0);
+        if (amount > balance) revert Errors.PlayerBalanceNotEnough(balance, amount);
+        _subtractFromBalance(msg.sender, amount);
         
         _transferPaperTo(msg.sender, amount);
     }

@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { formatEther, parseEther } from 'ethers/lib/utils';
-import { ethers, network, deployments } from 'hardhat';
-import { ERRORS, CHOICES } from './lib/constants';
+import { parseEther } from 'ethers/lib/utils';
+import { ethers } from 'hardhat';
+import { ERRORS } from './lib/constants';
 
 describe('TaxableGame', function () {
   beforeEach(async function () {
@@ -11,6 +11,8 @@ describe('TaxableGame', function () {
     const paperMock = await ethers.getContractFactory('PaperMock');
     this.tg = await TaxableGameMock.deploy();
     this.pm = await paperMock.deploy();
+
+    await this.tg.connect(this.contractOwner).changePaperContract(this.pm.address);
   });
 
   describe('minEntryFee', function () {
@@ -25,8 +27,8 @@ describe('TaxableGame', function () {
     });
 
     it('prevents anyone else', async function () {
-      await expect(this.tg.connect(this.randomHacker).setMinEntryFee(parseEther('69.420'))).
-        to.be.reverted;
+      await expect(this.tg.connect(this.randomHacker).setMinEntryFee(parseEther('69.420'))).to.be
+        .reverted;
     });
   });
 
@@ -58,40 +60,26 @@ describe('TaxableGame', function () {
     });
 
     it('allows contract owner to withdraw balance for contract itself', async function () {
-      console.log("yea1")
-      const oldOwnerBalance = await this.contractOwner.getBalance();
-
-      console.log("yea2")
       const fakeTaxMoney = parseEther('69');
-      await this.tg.connect(this.contractOwner).changePaperContract(this.tg.address)
-      console.log("yea3")
-
       await this.pm.connect(this.contractOwner).mintTo(this.tg.address, fakeTaxMoney);
-      console.log("yea4")
+
+      const fakePlayerMoney = parseEther('1');
+
+      // Fake set balance for user
+      await this.tg.unsafeSetBalance(this.clumsyNoob.address, fakePlayerMoney);
+
+      const oldOwnerBalance = await this.tg
+        .connect(this.clumsyNoob)
+        .balanceOf(this.clumsyNoob.address);
 
       // Fake setting balance for contract
       await this.tg.unsafeSetBalance(this.tg.address, BigNumber.from(0));
-      console.log("yea5")
       await this.tg.unsafeSetBalance(this.tg.address, fakeTaxMoney);
-      console.log("yea6")
-
-      console.log(await this.tg.balanceOf(this.tg.address));
-      console.log(await this.tg.balanceOf(this.contractOwner.address));
-
-      console.log(await this.pm.balanceOf(this.tg.address));
 
       await this.tg.connect(this.contractOwner).withdrawTax();
-      console.log("yea7")
-      const newOwnerBalance = await this.tg.balanceOf(this.contractOwner.address);
-      console.log("yea yea")
-      
-      expect(newOwnerBalance).
-        to.be.approximately(
-          oldOwnerBalance, 
-          // Calling unsafeSetBalance and withdrawTax takes some gas
-          parseEther('0.01')
-        );
-      console.log("yea yea yea")
+      const newOwnerBalance = await this.tg.balanceOf(this.clumsyNoob.address);
+
+      expect(newOwnerBalance).to.eq(oldOwnerBalance);
 
       expect(await this.tg.balanceOf(this.tg.address)).to.eq(ethers.BigNumber.from(0));
     });
@@ -99,14 +87,35 @@ describe('TaxableGame', function () {
     it('should get balanceOf(player)', async function () {
       const newBalance = parseEther('50');
       await this.tg.unsafeSetBalance(this.randomHacker.address, newBalance);
-      expect(await this.tg.balanceOf(this.randomHacker.address)).
-        to.equal(newBalance);
+      expect(await this.tg.balanceOf(this.randomHacker.address)).to.equal(newBalance);
     });
 
+    it('allows players to withdraw their balance', async function () {
+      const withdrawAmount = parseEther('10');
+      await this.pm.connect(this.contractOwner).mintTo(this.tg.address, withdrawAmount);
+
+      await this.tg.unsafeSetBalance(this.clumsyNoob.address, withdrawAmount);
+      await this.tg.connect(this.clumsyNoob).withdraw(withdrawAmount);
+
+      expect(await this.pm.connect(this.clumsyNoob).balanceOf(this.clumsyNoob.address)).to.eq(withdrawAmount);
+      expect(await this.tg.connect(this.clumsyNoob).balanceOf(this.clumsyNoob.address)).to.eq(BigNumber.from(0))
+    })
+
+    it('Does not allow players to withdraw more than in their balance', async function () {
+      const withdrawAmount = parseEther('10');
+      const contractBal = withdrawAmount.mul(2);
+      await this.pm.connect(this.contractOwner).mintTo(this.tg.address, contractBal);
+
+      await this.tg.unsafeSetBalance(this.clumsyNoob.address, withdrawAmount);
+      await expect(this.tg.connect(this.clumsyNoob).withdraw(contractBal)).to.be.revertedWithCustomError(
+        this.tg,
+        ERRORS.PlayerBalanceNotEnough
+      )
+    })
   });
-  
-  describe('payout', function() {
-    it('Should apply tax to payout', async function() {
+
+  describe('payout', function () {
+    it('Should apply tax to payout', async function () {
       const [p1] = await ethers.getSigners();
 
       const initialEntryFee = ethers.utils.parseEther('0.5');
@@ -123,5 +132,4 @@ describe('TaxableGame', function () {
       await expect(await this.tg.balanceOf(p1.address)).to.equal(payout);
     });
   });
-
 });
