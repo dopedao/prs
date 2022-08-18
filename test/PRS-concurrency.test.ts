@@ -1,36 +1,38 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { parseEther, formatEther } from 'ethers/lib/utils';
+import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { CHOICES } from './lib/constants';
 import { getRandomNumber } from './lib/utils';
-import { deployPrs } from './lib/helpers';
+import { deployPaperMock, deployPrs } from './lib/helpers';
 
 describe('PRS-concurrency', function () {
   describe('Concurrency Tests', function () {
     beforeEach(async function () {
       const { prsMock, p1, p2 } = await deployPrs();
+      const { paperMock } = await deployPaperMock();
       this.prsMock = prsMock;
       this.p1 = p1;
       this.p2 = p2;
+      this.paperMock = paperMock;
     });
 
     it('Should allow multiple games', async function () {
       const numGames = getRandomNumber(2, 7);
       const entryFee = 1;
       const entryFeeEth = ethers.utils.parseEther(entryFee.toString());
-      const gameIndex = 0;
       const p2Choice = CHOICES.SCISSORS;
+      const paperAmount = parseEther("20");
 
-      // Ensure players can join multiple times by loading big balance
-      await this.p1.sendTransaction({
-        to: this.prsMock.address,
-        value: ethers.utils.parseEther('20'),
-      });
-      await this.p2.sendTransaction({
-        to: this.prsMock.address,
-        value: ethers.utils.parseEther('20'),
-      });
+      await this.paperMock.connect(this.p1).mint(paperAmount);
+      await this.paperMock.connect(this.p2).mint(paperAmount);
+
+      await this.prsMock.connect(this.p1).changePaperContract(this.paperMock.address)
+      await this.paperMock.connect(this.p1).approve(this.prsMock.address, paperAmount);
+      await this.paperMock.connect(this.p2).approve(this.prsMock.address, paperAmount);
+
+      await this.prsMock.connect(this.p1).depositPaper(parseEther("20"));
+      await this.prsMock.connect(this.p2).depositPaper(parseEther("20"));
 
       const balances = {
         p1: {
