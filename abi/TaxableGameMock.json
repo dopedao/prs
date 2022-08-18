@@ -9,7 +9,7 @@
   "function balanceOf(address) view returns (uint256)",
   "function changePaperContract(address)",
   "function depositPaper(uint256)",
-  "function getBalance() view returns (uint256)",
+  "function getPaperBalance() view returns (uint256)",
   "function minEntryFee() view returns (uint256)",
   "function owner() view returns (address)",
   "function paused() view returns (bool)",
