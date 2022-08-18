@@ -5,8 +5,6 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
-
 import { Errors } from "./PRSLibrary.sol";
 
 // @notice Abstract contract to handle fees, taxes, balances, and payouts of players
@@ -16,7 +14,7 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     // @notice Tax percent the game takes for each round of play
     uint256 public taxPercent = 5;
     // @notice Address of $Paper contract
-    address paperAddress = 0x00F932F0FE257456b32dedA4758922E56A4F4b42;
+    IERC20 paperContract = IERC20(0x00F932F0FE257456b32dedA4758922E56A4F4b42);
 
     // @notice Where we keep balances of players and the contract itself
     mapping(address => uint256) internal _balances;
@@ -35,10 +33,6 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
         _;
     }
 
-    function changePaperContract(address paper) public onlyOwner {
-        paperAddress = paper;
-    }
-
     /* ========================================================================================= */
     // Receiving and withdrawing
     /* ========================================================================================= */
@@ -49,15 +43,14 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     // @notice Players can deposit $Paper to the contract
     // make sure to approve our contract to transfer first
     function depositPaper(uint256 amount) public whenNotPaused {
-        // @notice Wrapper to execute erc20 functions
-        require(IERC20(paperAddress).transferFrom(msg.sender, address(this), amount), "Transaction failed");
+        require(paperContract.transferFrom(msg.sender, address(this), amount), "Transaction failed");
         _balances[msg.sender] += amount;
     }
 
     // @notice Players can withdraw their balance from the contract
     function withdraw(uint256 amount) public whenNotPaused {
         uint256 balance = balanceOf(msg.sender);
-        if (_getContractBal() < balance) revert Errors.NotEnoughMoneyInContract(address(this).balance, balance);
+        if (getPaperBalance() < balance) revert Errors.NotEnoughMoneyInContract(address(this).balance, balance);
         if (amount > balance) revert Errors.PlayerBalanceNotEnough(balance, amount);
         _subtractFromBalance(msg.sender, amount);
         
@@ -67,10 +60,13 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     // @notice Withdraws tax from games played to contract owner
     function withdrawTax() public onlyOwner {
         uint256 balance = balanceOf(address(this));
-        if (_getContractBal() < balance) revert Errors.NotEnoughMoneyInContract(address(this).balance, balance);
         _setBalance(address(this), 0);
 
         _transferPaperTo(msg.sender, balance);
+    }
+
+    function changePaperContract(address paperAddress) public onlyOwner {
+        paperContract = IERC20(paperAddress);
     }
 
     /* ========================================================================================= */
@@ -88,12 +84,12 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     // Balances
     /* ========================================================================================= */
 
-    // @notice Eth balance of contract
-    function getBalance() public view returns (uint256) {
-        return address(this).balance;
+    // @notice Paper balance of contract
+    function getPaperBalance() public view returns (uint256) {
+        return paperContract.balanceOf(address(this));
     }
 
-    // @notice Paper balance for players and this contract itself
+    // @notice Paper balance for players and collected tax if called with the contract address
     function balanceOf(address account) public view returns (uint256) {
         return _balances[account];
     }
@@ -142,12 +138,7 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
 
     // @notice Transfer $Paper from contract to receiver
     function _transferPaperTo(address receiver, uint256 amount) internal {
-        require(IERC20(paperAddress).transfer(receiver, amount), "Transaction failed");
+        require(paperContract.transfer(receiver, amount), "Transaction failed");
         emit PaidOut(receiver, amount, block.timestamp);
-    }
-
-    // @notice Get $Paper balance of contract
-    function _getContractBal() internal view returns (uint256) {
-        return IERC20(paperAddress).balanceOf(address(this));
     }
 }
