@@ -16,7 +16,7 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     // @notice Address of $Paper contract
     IERC20 paperContract = IERC20(0x00F932F0FE257456b32dedA4758922E56A4F4b42);
 
-    // @notice Where we keep balances of players and the contract itself
+    // @notice Where we keep balances of players and the contract itself (collected tax)
     mapping(address => uint256) internal _balances;
 
     event PaidOut(address indexed, uint256, uint256);
@@ -40,8 +40,8 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     // @notice Players increase their balance by sending the contract tokens
     receive() external payable {}
 
-    // @notice Players can deposit $Paper to the contract
-    // make sure to approve our contract to transfer first
+    // @notice Players can deposit Paper into the contract
+    //         make sure to approve our contract to transfer first
     function depositPaper(uint256 amount) public whenNotPaused {
         require(paperContract.transferFrom(msg.sender, address(this), amount), "Transaction failed");
         _balances[msg.sender] += amount;
@@ -84,12 +84,13 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
     // Balances
     /* ========================================================================================= */
 
-    // @notice Paper balance of contract
+    // @notice Combined Paper balance of contract
     function getPaperBalance() public view returns (uint256) {
         return paperContract.balanceOf(address(this));
     }
 
-    // @notice Paper balance for players and collected tax if called with the contract address
+    // @notice Paper balance for players
+    //         Collected tax if called with the contract address
     function balanceOf(address account) public view returns (uint256) {
         return _balances[account];
     }
@@ -136,7 +137,7 @@ abstract contract TaxableGame is Ownable, ReentrancyGuard, Pausable {
 
     }
 
-    // @notice Transfer $Paper from contract to receiver
+    // @notice Transfer Paper from contract to receiver
     function _transferPaperTo(address receiver, uint256 amount) internal {
         require(paperContract.transfer(receiver, amount), "Transaction failed");
         emit PaidOut(receiver, amount, block.timestamp);
