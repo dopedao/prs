@@ -4,7 +4,7 @@ pragma solidity ^0.8.12;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract PaperMock is ERC20 {
-    constructor() ERC20("PAPIER", "PAPIER") {}
+    constructor() ERC20("PAPER", "PAPER") {}
 
     function mintTo(address target, uint256 amount) public {
         _mint(target, amount);
