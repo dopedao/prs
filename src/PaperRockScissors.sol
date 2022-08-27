@@ -180,9 +180,8 @@ contract PaperRockScissors is Ownable, Pausable, TaxableGame, PRSLeaderboard {
                 revert Errors.AlreadyRevealed(msg.sender, gameId);
             game.p1ClearChoice = _getHashChoice(game.p1SaltedChoice, movePw);
 
-            if (game.p2ClearChoice != Choices.NONE) {
+            if (game.p2ClearChoice != Choices.NONE)
                 _resolveGame(gameId);
-            }
             return;
         }
 
@@ -190,9 +189,9 @@ contract PaperRockScissors is Ownable, Pausable, TaxableGame, PRSLeaderboard {
             if (game.p2ClearChoice != Choices.NONE)
                 revert Errors.AlreadyRevealed(msg.sender, gameId);
             game.p2ClearChoice = _getHashChoice(game.p2SaltedChoice, movePw);
-            if (game.p1ClearChoice != Choices.NONE) {
+
+            if (game.p1ClearChoice != Choices.NONE)
                 _resolveGame(gameId);
-            }
             return;
         }
     }
@@ -201,25 +200,6 @@ contract PaperRockScissors is Ownable, Pausable, TaxableGame, PRSLeaderboard {
     // Resolve
     /* ========================================================================================= */
     
-    /// @dev Game is resolvable when this function gets called
-    ///      and therefore we can omit the safety checks
-    function _resolveGame(uint256 gameId) private whenNotPaused {
-        Game storage game = Games[gameId];
-        game.resolved = true;
-
-        uint256 gameBalance = game.entryFee * 2;
-
-        address winner = _chooseWinner(
-            game.p1ClearChoice,
-            game.p2ClearChoice,
-            game.p1,
-            game.p2,
-            gameBalance
-        );
-        _insertTableRow(gameId, game, winner);
-        return;
-    }
-
     /// @dev Game is not resolvable if timer is still running and both players
     ///      have not revealed their move.
     function resolveGame(uint256 gameId) public whenNotPaused {
@@ -267,6 +247,25 @@ contract PaperRockScissors is Ownable, Pausable, TaxableGame, PRSLeaderboard {
             return;
         }
         // If both players fail to reveal the entryFee gets "burned" ;)
+    }
+
+    /// @dev Game is resolvable when this function gets called
+    ///      and therefore we can omit the safety checks
+    function _resolveGame(uint256 gameId) private whenNotPaused {
+        Game storage game = Games[gameId];
+        game.resolved = true;
+
+        uint256 gameBalance = game.entryFee * 2;
+
+        address winner = _chooseWinner(
+            game.p1ClearChoice,
+            game.p2ClearChoice,
+            game.p1,
+            game.p2,
+            gameBalance
+        );
+        _insertTableRow(gameId, game, winner);
+        return;
     }
 
     /* ========================================================================================= */
