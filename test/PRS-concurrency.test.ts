@@ -63,15 +63,9 @@ describe('PRS-concurrency', function () {
       }
 
       // p2 reveals chocie
-      for (let i = 0; i < numGames; i++) {
-        await this.prsMock.connect(this.p2).revealChoice(i, p2ClearChoice);
-      }
-
       // p2 wins every time
       for (let i = 0; i < numGames; i++) {
-        expect(await this.prsMock.connect(this.p1).
-          resolveGame(i)
-        ).to.not.be.reverted;
+        await this.prsMock.connect(this.p2).revealChoice(i, p2ClearChoice);
       }
 
       const amountSpent = entryFeeEth.mul(numGames);
