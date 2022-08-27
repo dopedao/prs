@@ -33,10 +33,9 @@ describe('PRS-resolution', function () {
       const [p2ChoicePw, p2HashChoice] = clearAndHashChoice(CHOICES.PAPER);
 
       await prsMock.connect(p2).joinGame(gameIndex, p2HashChoice, entryFee);
-      await prsMock.connect(p1).revealChoice(0, clearChoice);
       await prsMock.connect(p2).revealChoice(0, p2ChoicePw);
 
-      await expect(await prsMock.connect(p1).resolveGame(0)).to.not.reverted;
+      await expect(await prsMock.connect(p1).revealChoice(0, p2ChoicePw)).to.not.reverted;
     });
 
     it("Shouldn't let p1 resolve the game if doesn't have one", async function () {
@@ -78,8 +77,6 @@ describe('PRS-resolution', function () {
 
       await prsMock.connect(p1).revealChoice(gameIndex, clearChoice);
       await prsMock.connect(p2).revealChoice(gameIndex, p2ChoicePw);
-
-      await prsMock.connect(p1).resolveGame(gameIndex);
 
       // const game = await prsMock.connect(p1).getGame(p1.address, gameIndex);
       // Game is a tie
@@ -153,7 +150,6 @@ describe('PRS-resolution', function () {
       await prsMock.connect(p1).revealChoice(0, clearChoice);
       await prsMock.connect(p2).revealChoice(0, p2ChoicePw);
 
-      await prsMock.connect(p1).resolveGame(0);
       await expect(prsMock.connect(p1).resolveGame(0)).to.revertedWithCustomError(
         prsMock,
         ERRORS.NotResolvable
