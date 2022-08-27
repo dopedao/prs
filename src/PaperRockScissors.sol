@@ -199,7 +199,7 @@ contract PaperRockScissors is Ownable, Pausable, TaxableGame, PRSLeaderboard {
     /* ========================================================================================= */
     // Resolve
     /* ========================================================================================= */
-    
+
     /// @dev Game is not resolvable if timer is still running and both players
     ///      have not revealed their move.
     function resolveGame(uint256 gameId) public whenNotPaused {
